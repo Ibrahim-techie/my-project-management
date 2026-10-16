@@ -36,10 +36,13 @@ const userSchema = new Schema(
       trim: true,
     },
 
-    fullName: {
+    username: {
       type: String,
       required: true,
+      unique: true,
+      lowercase: true,
       trim: true,
+      index: true,
     },
 
     password: {
@@ -48,7 +51,7 @@ const userSchema = new Schema(
       trim: true,
     },
 
-    isemailVerified: {
+    isEmailVerified: {
       type: Boolean,
       default: false,
     },
@@ -135,7 +138,7 @@ userSchema.methods.generateEmailVerificationToken = function () {
 
   const TokenExpiry = Date.now() + ms("1h"); // 1 hour
 
-  return { token, hashedToken, TokenExpiry };
+  return { Token, HashedToken, TokenExpiry };
 };
 
 const User = mongoose.model("User", userSchema);
