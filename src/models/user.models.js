@@ -36,7 +36,7 @@ const userSchema = new Schema(
       trim: true,
     },
 
-    username: {
+   fullName: {
       type: String,
       required: true,
       unique: true,
@@ -82,15 +82,14 @@ const userSchema = new Schema(
 
 //pre hook to hash password before saving
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   // Only hash the password if it has been modified (or is new)
 
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password")) return;
 
   // Hash the password with a salt round of 10
 
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 // Method to compare password for login
@@ -138,7 +137,7 @@ userSchema.methods.generateEmailVerificationToken = function () {
 
   const TokenExpiry = Date.now() + ms("1h"); // 1 hour
 
-  return { Token, HashedToken, TokenExpiry };
+  return { token, hashedToken, TokenExpiry };
 };
 
 const User = mongoose.model("User", userSchema);
