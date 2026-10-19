@@ -1,5 +1,5 @@
 import pkg from "express-validator";
-const { body, validationResult } = pkg;
+const { body} = pkg;
 
 const userRegisterValidator = () => {
   return [
@@ -26,8 +26,42 @@ const userRegisterValidator = () => {
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters"),
 
-    body("fullName").optional().trim(),
+    body("fullName")
+      .trim()
+      .notEmpty()
+      .withMessage("Full name is required"),
   ];
 };
 
-export default userRegisterValidator;
+
+
+
+const userLoginValidator = () => {
+  return [
+    // Email is optional but must be valid if provided
+
+    body("email")
+      .optional()
+      .isEmail()
+      .withMessage("Email is invalid"),
+
+    // Username is optional but must be lowercase if provided
+    
+    body("username")
+      .optional()
+      .isLowercase()
+      .withMessage("Username must be lowercase"),
+
+    // Password is required
+
+    body("password")
+      .notEmpty()
+      .withMessage("Password is required")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters long"),
+  ];
+};
+
+
+
+export  {userLoginValidator,userRegisterValidator};

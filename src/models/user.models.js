@@ -39,10 +39,8 @@ const userSchema = new Schema(
    fullName: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
 
     password: {
@@ -135,7 +133,7 @@ userSchema.methods.generateEmailVerificationToken = function () {
   // Hash the token before saving it to the database
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-  const TokenExpiry = Date.now() + ms("1h"); // 1 hour
+  const TokenExpiry = new Date(Date.now() + ms("1h")); // 1 hour
 
   return { token, hashedToken, TokenExpiry };
 };

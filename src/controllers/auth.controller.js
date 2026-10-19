@@ -5,9 +5,33 @@ import { sendVerificationEmail } from "./email.controller.js";
 import asynchandler from "../utils/asynchandler.js";
 
 import ApiResponse from "../utils/ApiResponse.js";
+import ApiError from "../utils/ApiErrors.js";
+
+// method to call access and referesh token
+
+const generateAccessAndRefreshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+
+    if (user) {
+      const accessToken = user.generateAccessToken();
+      const refereshToken = user.generateRefreshToken();
+
+      user.refreshToken = refereshToken;
+
+      await user.save({ validateBeforeSave: false });
+      return { accessToken, refereshToken };
+    }
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access token",
+    );
+  }
+};
 
 const registerUser = asynchandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, fullName } = req.body;
 
   if (
     ![username, email, password].every(
@@ -38,6 +62,7 @@ const registerUser = asynchandler(async (req, res) => {
   const newUser = await User.create({
     username,
     email,
+    fullName,
     password,
     isEmailVerified: false,
   });
@@ -89,11 +114,15 @@ const verifyEmail = asynchandler(async (req, res) => {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   const user = await User.findOne({
     emailVerificationToken: hashedToken,
-    emailVerificationTokenExpiry: { $gt: Date.now() },
+    emailVerificationTokenExpiry: { $gt: new Date()},
   });
 
   if (!user) {
-    throw new APIError(400, "Email verification token is invalid or expired", []);
+    throw new APIError(
+      400,
+      "Email verification token is invalid or expired",
+      [],
+    );
   }
 
   user.isEmailVerified = true;
@@ -101,7 +130,69 @@ const verifyEmail = asynchandler(async (req, res) => {
   user.emailVerificationTokenExpiry = undefined;
   await user.save({ validateBeforeSave: false });
 
-  return res.status(200).json(new ApiResponse(200, "Email verified successfully", null));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Email verified successfully", null));
 });
 
-export { registerUser, verifyEmail };
+// login
+
+const LoginUser = asynchandler(async (req, res) => {
+  const { email, password, username } = req.body;
+
+  // Require either username or email
+  if (!username && !email) {
+    throw new ApiError(400, "Username or Email is required");
+  }
+
+  const user = await User.findOne({
+    $or: [{ email }, { username }],
+  });
+
+  if (!user) {
+    throw new ApiError(
+      400,
+      "User not found. Ensure username/email and password are correct",
+    );
+  }
+
+  // Validate password
+  const isValid = await user.comparePassword(password);
+  if (!isValid) {
+    throw new ApiError(400, "Invalid credentials. Ensure password is correct");
+  }
+
+  const { accessToken, refereshToken } = await generateAccessAndRefreshTokens(
+    user._id,
+  );
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -emailVerificationToken -emailVerificationTokenExpiry -refreshToken",
+  );
+
+  // cookies logic here ..
+
+  const options = {
+    httpOnly: true,
+    secure: false,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refereshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        "Login Successfully ",
+
+        {
+          user: loggedInUser,
+          accessToken: accessToken,
+          refereshToken: refereshToken,
+        },
+      ),
+    );
+});
+
+export { registerUser, LoginUser ,verifyEmail};

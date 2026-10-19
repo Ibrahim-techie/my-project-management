@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -47,8 +48,6 @@ import authRoutes from "./routes/auth.routes.js";
 app.use("/api/v1/healthcheck", healthcheckRoutes);
 
 app.use("/api/v1/auth", authRoutes);
-// Keep the documented registration URL available alongside the auth namespace.
-app.use("/api/v1", authRoutes);
 
 
 
@@ -63,6 +62,10 @@ app.get("/health", (req, res) => {
 
 app.use((error, req, res, next) => {
   const statusCode = error.statusCode || error.status || 500;
+  if (statusCode >= 500) {
+    console.error(`Unhandled error for ${req.method} ${req.originalUrl}:`, error);
+  }
+
   const isMalformedJson = error.type === "entity.parse.failed";
   const message = isMalformedJson
     ? "Request body contains invalid JSON"
@@ -74,7 +77,7 @@ app.use((error, req, res, next) => {
     statusCode,
     message,
     success: false,
-    errors: [],
+    errors: error.errors || [],
   });
 });
 
