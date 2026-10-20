@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
-  LoginUser,
+  loginUser,
+  logoutUser,
   registerUser,
   verifyEmail,
 } from "../controllers/auth.controller.js";
@@ -11,6 +12,8 @@ import {
   userLoginValidator,
 } from "../validators/index.js";
 
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+
 const router = Router();
 
 router
@@ -19,6 +22,7 @@ router
 
 router.route("/verify-email/:token").get(verifyEmail);
 
-router.route("/login").post(userLoginValidator(), validateRequest, LoginUser);
+router.route("/login").post(userLoginValidator(), validateRequest, loginUser);
+router.route("/logout").post(verifyJWT, logoutUser);
 
 export default router;

@@ -40,11 +40,11 @@ const sendEmail = async ({ to, subject, mailgenContent }) => {
 // 3. Send email verification email
 const sendVerificationEmail = async ({
   email,
-  name,
+  username,
   verificationLink,
 }) => {
   const mailgenContent = emailverificationContentGenerator(
-    name,
+    username,
     verificationLink
   );
 
@@ -58,11 +58,11 @@ const sendVerificationEmail = async ({
 // 4. Send forgot password email
 const sendPasswordResetEmail = async ({
   email,
-  name,
+  username,
   resetLink,
 }) => {
   const mailgenContent = forgotPasswordEmailContentGenerator(
-    name,
+    username,
     resetLink
   );
 

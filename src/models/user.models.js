@@ -62,14 +62,14 @@ const userSchema = new Schema(
       type: String,
     },
 
-    forgotPasswordTokenExpiry: {
+    forgotPasswordtokenExpiry  : {
       type: Date,
     },
 
     emailVerificationToken: {
       type: String,
     },
-    emailVerificationTokenExpiry: {
+    emailVerificationtokenExpiry : {
       type: Date,
     },
   },
@@ -121,8 +121,8 @@ userSchema.methods.generateForgotPasswordToken = function () {
   // Hash the token before saving it to the database
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-  const TokenExpiry = Date.now() + ms("1h"); // 1 hour
-  return { token, hashedToken, TokenExpiry };
+  const tokenExpiry  = Date.now() + ms("1h"); // 1 hour
+  return { token, hashedToken, tokenExpiry  };
 };
 
 // Method to generate email verification token
@@ -133,9 +133,9 @@ userSchema.methods.generateEmailVerificationToken = function () {
   // Hash the token before saving it to the database
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-  const TokenExpiry = new Date(Date.now() + ms("1h")); // 1 hour
+  const tokenExpiry  = new Date(Date.now() + ms("1h")); // 1 hour
 
-  return { token, hashedToken, TokenExpiry };
+  return { token, hashedToken, tokenExpiry  };
 };
 
 const User = mongoose.model("User", userSchema);
