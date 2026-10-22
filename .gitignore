@@ -44,3 +44,4 @@ Thumbs.db
 # Optional: If using PM2
 .pids
 postman/project-management-auth.postman_collection.json
+PRD.md
