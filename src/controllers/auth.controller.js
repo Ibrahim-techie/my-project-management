@@ -88,12 +88,36 @@ const registerUser = asynchandler(async (req, res) => {
 
   await newUser.save({ validateBeforeSave: false });
 
-  // Send verification email
-  await sendVerificationEmail({
-    email: newUser.email,
-    username: newUser.username,
-    verificationLink: `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${token}`,
-  });
+  // Send verification email; roll back the account if delivery fails so the
+  // user can retry registration with the same email and username.
+  try {
+    await sendVerificationEmail({
+      email: newUser.email,
+      username: newUser.username,
+      verificationLink: `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${token}`,
+    });
+  } catch (emailError) {
+    try {
+      await User.deleteOne({ _id: newUser._id });
+    } catch (cleanupError) {
+      console.error(
+        "Failed to remove the newly created user after verification email failure:",
+        cleanupError,
+      );
+      throw new APIError(
+        500,
+        "Registration failed and account cleanup could not be completed",
+        [],
+      );
+    }
+
+    console.error("Verification email failed; registration was rolled back:", emailError);
+    throw new APIError(
+      502,
+      "Verification email could not be sent. Registration was not completed; please try again.",
+      [],
+    );
+  }
 
   const createdUser = await User.findById(newUser._id).select(
     "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken",
@@ -202,13 +226,14 @@ const loginUser = asynchandler(async (req, res) => {
 });
 
 //logout
-
+// signle device logout deletes all sessions on all devices 
 const logoutUser = asynchandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set: {
-        refreshToken: "",
+      $inc: { tokenVersion: 1 },
+      $unset: {
+        refreshToken: 1,
       },
     },
     {
@@ -233,7 +258,7 @@ const getCurrentUser = asynchandler(async (req, res) => {
 
 //resend Email Token
 const resendEmailVerification = asynchandler(async (req, res) => {
-  const user = await User.findOne(req.user._id);
+  const user = await User.findById(req.user._id);
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -266,7 +291,7 @@ const resendEmailVerification = asynchandler(async (req, res) => {
 //Refresh Access Token based On referesh Token
 
 const refreshAccessToken = asynchandler(async (req, res) => {
-  const incomingRT = req.cookies.refreshToken || req.body.refreshToken;
+  const incomingRT = req.cookies?.refreshToken || req.body?.refreshToken;
 
   if (!incomingRT) {
     throw new ApiError(401, "Unauthorized Access");
@@ -346,9 +371,13 @@ const forgotPassword = asynchandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  const resetLink = `${process.env.BASE_PASSWORD_RESET_LINK}?token=${token}&id=${user._id}`;
-
   try {
+    const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
+    if (!frontendUrl) {
+      throw new Error("FRONTEND_URL is not configured");
+    }
+
+    const resetLink = `${frontendUrl}/reset-password?resetToken=${encodeURIComponent(token)}`;
     await sendPasswordResetEmail({
       email: user.email,
       username: user.username,
@@ -365,7 +394,7 @@ const forgotPassword = asynchandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, "If an account exists, a reset link has been sent"),
+      new ApiResponse(200, "If an account exists, a reset link has been sent to the registered email"),
     );
 });
 
@@ -393,15 +422,18 @@ const resetForgotPassword = asynchandler(async (req, res) => {
   }
 
   user.password = newPassword;
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1;
 
   // Clear reset token fields (single-use)
   user.forgotPasswordToken = undefined;
   user.forgotPasswordtokenExpiry = undefined;
-
+  user.refreshToken = undefined;
   await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
+    .clearCookie("accessToken", authCookieOptions)
+    .clearCookie("refreshToken", authCookieOptions)
     .json(new ApiResponse(200, "Password reset successfully"));
 });
 
@@ -425,13 +457,15 @@ const changeOldPassword = asynchandler(async (req, res) => {
 
   user.password = newPassword;
 
-  // Example: single-token strategy
+  user.tokenVersion = (user.tokenVersion ?? 0) + 1;
   user.refreshToken = undefined;
 
   await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
+    .clearCookie("accessToken", authCookieOptions)
+    .clearCookie("refreshToken", authCookieOptions)
     .json(new ApiResponse(200, "Password Changed Successfully", {}));
 });
 

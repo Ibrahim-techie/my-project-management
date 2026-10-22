@@ -1,5 +1,5 @@
 import pkg from "express-validator";
-const { body} = pkg;
+const { body } = pkg;
 
 const userRegisterValidator = () => {
   return [
@@ -26,27 +26,18 @@ const userRegisterValidator = () => {
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters"),
 
-    body("fullName")
-      .trim()
-      .notEmpty()
-      .withMessage("Full name is required"),
+    body("fullName").trim().notEmpty().withMessage("Full name is required"),
   ];
 };
-
-
-
 
 const userLoginValidator = () => {
   return [
     // Email is optional but must be valid if provided
 
-    body("email")
-      .optional()
-      .isEmail()
-      .withMessage("Email is invalid"),
+    body("email").optional().isEmail().withMessage("Email is invalid"),
 
     // Username is optional but must be lowercase if provided
-    
+
     body("username")
       .optional()
       .isLowercase()
@@ -62,6 +53,41 @@ const userLoginValidator = () => {
   ];
 };
 
+const userChangeCurrentPasswordValidator = () => {
+  return [
+    body("oldPassword")
+      .notEmpty()
+      .withMessage("Old Password is Required")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters long"),
 
+    body("newPassword")
+      .notEmpty()
+      .withMessage("New Password is Required")
+      .isLength({ min: 6 })
+      .withMessage("Password must be at least 6 characters long"),
+  ];
+};
 
-export  {userLoginValidator,userRegisterValidator};
+const userforgotPasswordValidator = () => {
+  return [
+    body("email").optional().isEmail().withMessage("Provide a Valid Email"),
+
+    body("username")
+      .optional()
+      .isString()
+      .withMessage("provide valid Username"),
+  ];
+};
+
+const userResetPasswordValidator = () => {
+  return [body("newPassword").notEmpty().withMessage("Password is Required")];
+};
+
+export {
+  userLoginValidator,
+  userRegisterValidator,
+  userChangeCurrentPasswordValidator,
+  userforgotPasswordValidator,
+  userResetPasswordValidator,
+};

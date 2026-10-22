@@ -18,6 +18,9 @@ export const verifyJWT = asynchandler(async (req, res, next) => {
       "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken"
     );
     if (!user) return next(new ApiError(401, "Invalid Access Token"));
+    if (decodedToken.tokenVersion !== user.tokenVersion) {
+      return next(new ApiError(401, "Access token has been revoked"));
+    }
     req.user = user; // ADD the User details decoded in AT
     next();
   } catch (error) {

@@ -58,6 +58,11 @@ const userSchema = new Schema(
       type: String,
     },
 
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+
     forgotPasswordToken: {
       type: String,
     },
@@ -100,7 +105,12 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
-    { _id: this._id, email: this.email, username: this.username },
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+      tokenVersion: this.tokenVersion ?? 0,
+    },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: ms(process.env.ACCESS_TOKEN_EXPIRATION) / 1000 },
   );
