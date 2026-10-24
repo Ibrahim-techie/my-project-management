@@ -5,7 +5,7 @@ dotenv.config();
 
 import {
   mailGenerator,
-  emailverificationContentGenerator,
+  emailVerificationContentGenerator,
   forgotPasswordEmailContentGenerator,
 } from "../utils/mail.js";
 
@@ -38,14 +38,10 @@ const sendEmail = async ({ to, subject, mailgenContent }) => {
 };
 
 // 3. Send email verification email
-const sendVerificationEmail = async ({
-  email,
-  username,
-  verificationLink,
-}) => {
+const sendVerificationEmail = async ({ email, userName, verificationLink }) => {
   const mailgenContent = emailverificationContentGenerator(
-    username,
-    verificationLink
+    userName,
+    verificationLink,
   );
 
   return await sendEmail({
@@ -56,14 +52,10 @@ const sendVerificationEmail = async ({
 };
 
 // 4. Send forgot password email
-const sendPasswordResetEmail = async ({
-  email,
-  username,
-  resetLink,
-}) => {
+const sendPasswordResetEmail = async ({ email, userName, resetLink }) => {
   const mailgenContent = forgotPasswordEmailContentGenerator(
-    username,
-    resetLink
+    userName,
+    resetLink,
   );
 
   return await sendEmail({
@@ -72,6 +64,8 @@ const sendPasswordResetEmail = async ({
     mailgenContent,
   });
 };
+
+//5 Sending Email for Project member Invite to User
 
 export {
   transporter,

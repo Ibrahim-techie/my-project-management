@@ -27,5 +27,6 @@ const projectMemberSchema = new Schema(
   },
 );
 
-export const ProjectMember = model("ProjectMember", projectMemberSchema);
- 
+const ProjectMember = model("ProjectMember", projectMemberSchema);
+
+export default ProjectMember;

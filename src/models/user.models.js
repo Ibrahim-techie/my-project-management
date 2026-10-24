@@ -19,7 +19,7 @@ const userSchema = new Schema(
         localPath: "",
       },
     },
-    username: {
+    userName: {
       type: String,
       required: true,
       unique: true,
@@ -108,7 +108,7 @@ userSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       email: this.email,
-      username: this.username,
+      userName: this.userName,
       tokenVersion: this.tokenVersion ?? 0,
     },
     process.env.ACCESS_TOKEN_SECRET,

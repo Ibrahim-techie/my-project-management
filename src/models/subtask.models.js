@@ -27,7 +27,10 @@ const subtaskSchema = new Schema(
   },
 );
 
-export const Subtask = model("Subtask", subtaskSchema);
+ const Subtask = model("Subtask", subtaskSchema);
+
+
+ export default Subtask;
 // later addition
 
 // assignedTo	⚖️ Optional	If subtasks can be delegated

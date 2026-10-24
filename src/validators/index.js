@@ -1,4 +1,5 @@
 import pkg from "express-validator";
+import { AvailableUserRole } from "../utils/constants";
 const { body } = pkg;
 
 const userRegisterValidator = () => {
@@ -10,7 +11,7 @@ const userRegisterValidator = () => {
       .isEmail()
       .withMessage("Invalid email format"),
 
-    body("username")
+    body("userName")
       .trim()
       .notEmpty()
       .withMessage("Username is required")
@@ -38,7 +39,7 @@ const userLoginValidator = () => {
 
     // Username is optional but must be lowercase if provided
 
-    body("username")
+    body("userName")
       .optional()
       .isLowercase()
       .withMessage("Username must be lowercase"),
@@ -73,7 +74,7 @@ const userforgotPasswordValidator = () => {
   return [
     body("email").optional().isEmail().withMessage("Provide a Valid Email"),
 
-    body("username")
+    body("userName")
       .optional()
       .isString()
       .withMessage("provide valid Username"),
@@ -84,10 +85,39 @@ const userResetPasswordValidator = () => {
   return [body("newPassword").notEmpty().withMessage("Password is Required")];
 };
 
+const CreateProjectValidator = () => {
+  return [
+    body("name").notEmpty().withMessage("Name is Required "),
+    body("description").optional(),
+  ];
+};
+
+const addMembertoProjectValidator = () => {
+  return [
+    body("email")
+      .isEmail()
+      .withMessage("Provide Valid Email of the User")
+      .trim()
+      .optional(),
+
+    body("username").optional(),
+
+    body("projectId").notEmpty().withMessage("Project ID is Required "),
+
+    body("roel")
+      .notEmpty()
+      .withMessage("Role is Required")
+      .isIn(AvailableUserRole)
+      .withMessage("Role is Invalid"),
+  ];
+};
+
 export {
   userLoginValidator,
   userRegisterValidator,
   userChangeCurrentPasswordValidator,
   userforgotPasswordValidator,
   userResetPasswordValidator,
+  CreateProjectValidator,
+  addMembertoProjectValidator,
 };

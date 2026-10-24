@@ -42,10 +42,10 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 const registerUser = asynchandler(async (req, res) => {
-  const { username, email, password, fullName } = req.body;
+  const { userName, email, password, fullName } = req.body;
 
   if (
-    ![username, email, password].every(
+    ![userName, email, password].every(
       (value) => typeof value === "string" && value.trim(),
     )
   ) {
@@ -55,7 +55,7 @@ const registerUser = asynchandler(async (req, res) => {
   // Check if the user already exists
 
   const existingUser = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email }, { userName }],
   });
 
   // If user exists, return an error
@@ -63,7 +63,7 @@ const registerUser = asynchandler(async (req, res) => {
   if (existingUser) {
     throw new APIError(
       409,
-      "User with this email or username already exists",
+      "User with this email or userName already exists",
       [],
     );
   }
@@ -71,7 +71,7 @@ const registerUser = asynchandler(async (req, res) => {
   // Create a new user
 
   const newUser = await User.create({
-    username,
+    userName,
     email,
     fullName,
     password,
@@ -89,11 +89,11 @@ const registerUser = asynchandler(async (req, res) => {
   await newUser.save({ validateBeforeSave: false });
 
   // Send verification email; roll back the account if delivery fails so the
-  // user can retry registration with the same email and username.
+  // user can retry registration with the same email and userName.
   try {
     await sendVerificationEmail({
       email: newUser.email,
-      username: newUser.username,
+      userName: newUser.userName,
       verificationLink: `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${token}`,
     });
   } catch (emailError) {
@@ -173,21 +173,21 @@ const verifyEmail = asynchandler(async (req, res) => {
 // login
 
 const loginUser = asynchandler(async (req, res) => {
-  const { email, password, username } = req.body;
+  const { email, password, userName } = req.body;
 
-  // Require either username or email
-  if (!username && !email) {
+  // Require either userName or email
+  if (!userName && !email) {
     throw new ApiError(400, "Username or Email is required");
   }
 
   const user = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email }, { userName }],
   });
 
   if (!user) {
     throw new ApiError(
       400,
-      "User not found. Ensure username/email and password are correct",
+      "User not found. Ensure userName/email and password are correct",
     );
   }
 
@@ -279,7 +279,7 @@ const resendEmailVerification = asynchandler(async (req, res) => {
   // Send verification email again
   await sendVerificationEmail({
     email: user.email,
-    username: user.username,
+    userName: user.userName,
     verificationLink: `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${token}`,
   });
 
@@ -342,13 +342,13 @@ const refreshAccessToken = asynchandler(async (req, res) => {
 //Forget Password
 
 const forgotPassword = asynchandler(async (req, res) => {
-  const { username, email } = req.body;
-  if (!username && !email) {
-    throw new ApiError(400, "Provide username or email");
+  const { userName, email } = req.body;
+  if (!userName && !email) {
+    throw new ApiError(400, "Provide userName or email");
   }
 
   const user = await User.findOne({
-    $or: [{ email }, { username }],
+    $or: [{ email }, { userName }],
   });
 
   // Always return the same generic response to avoid user enumeration
@@ -380,7 +380,7 @@ const forgotPassword = asynchandler(async (req, res) => {
     const resetLink = `${frontendUrl}/reset-password?resetToken=${encodeURIComponent(token)}`;
     await sendPasswordResetEmail({
       email: user.email,
-      username: user.username,
+      userName: user.userName,
       resetLink,
     });
   } catch (error) {
