@@ -1,6 +1,5 @@
 import { Schema } from "mongoose";
 import { model } from "mongoose";
-import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
 
 const projectNoteschema = new Schema(
   {
@@ -19,11 +18,13 @@ const projectNoteschema = new Schema(
     content: {
       type: String,
       required: true,
-
-      default: "",
+      trim: true,
+      maxlength: 15000,
     },
   },
   { timestamps: true },
 );
 
-export const Note = model("Note", projectNoteschema);
+const Note = model("Note", projectNoteschema);
+
+export default Note;
