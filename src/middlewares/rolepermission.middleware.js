@@ -1,33 +1,42 @@
-import asynchandler from "../utils/asynchandler.js";
+import asyncHandler from "../utils/asynchandler.js";
 import ApiError from "../utils/ApiErrors.js";
+import ProjectMember from "../models/projectmember.models.js";
 import mongoose from "mongoose";
-import Project from "../models/project.models.js";
 
-export const roleProjectPermission = (roles = []) => {
-  asynchandler(async (req, res, next) => {
-    const { projectId } = req.query;
+const roleProjectPermission = (roles = []) => {
+  return asyncHandler(async (req, res, next) => {
+    const { projectId } = req.params;
 
     if (!projectId) {
-      next(new ApiError(400, "Missing ProjectID"));
+      throw new ApiError(400, "Missing Project ID");
     }
 
-    const project = await Project.findone({
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      throw new ApiError(400, "Invalid Project ID");
+    }
+
+    const projectMember = await ProjectMember.findOne({
       project: new mongoose.Types.ObjectId(projectId),
       user: new mongoose.Types.ObjectId(req.user._id),
     });
 
-    if (!project) {
-      next(new ApiError(400, "Porject Not found"));
+    if (!projectMember) {
+      throw new ApiError(403, "You are not a member of this project");
     }
 
-    const givenRole = project?.role;
+    const givenRole = projectMember.role;
 
     req.user.role = givenRole;
 
     if (!roles.includes(givenRole)) {
-      throw new ApiError(403, "You Do not Have Permission to DO this Action");
+      throw new ApiError(
+        403,
+        "You do not have permission to perform this action",
+      );
     }
 
     next();
   });
 };
+
+export default roleProjectPermission;
