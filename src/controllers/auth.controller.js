@@ -197,6 +197,10 @@ const loginUser = asynchandler(async (req, res) => {
     throw new ApiError(400, "Invalid credentials. Ensure password is correct");
   }
 
+  if (!user.isEmailVerified) {
+    throw new ApiError(403, "Please verify your email before logging in");
+  }
+
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     user._id,
   );
