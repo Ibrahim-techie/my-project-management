@@ -36,11 +36,12 @@ const taskSchema = new Schema(
       default: TaskStatusEnum.TODO,
     },
 
-    attachement: {
+    attachments: {
       type: [
         {
           url: String,
           mimetype: String,
+          publicId: String,
           size: Number,
         },
       ],
