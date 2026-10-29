@@ -45,3 +45,4 @@ Thumbs.db
 .pids
 postman/project-management-auth.postman_collection.json
 PRD.md
+.claude/launch.json
