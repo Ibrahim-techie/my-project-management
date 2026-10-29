@@ -1,100 +1,169 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { NotebookPen, Pencil, Trash2 } from "lucide-react";
 import { api, errMsg, unwrap } from "../api";
-import { Alert } from "./ui.jsx";
+import { EmptyState } from "@/components/page";
+import { UserAvatar } from "@/components/user-avatar";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/toast";
+import { displayName, relativeTime } from "@/lib/format";
 
 export default function Notes({ projectId, canEdit }) {
+  const toast = useToast();
   const [notes, setNotes] = useState(null);
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
-  const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-  const load = () =>
-    api
-      .get(`/notes/${projectId}`)
-      .then((res) => setNotes(unwrap(res) || []))
-      .catch((e) => setError(errMsg(e)));
+  const load = useCallback(
+    () =>
+      api
+        .get(`/notes/${projectId}`)
+        .then((res) => setNotes(unwrap(res) || []))
+        .catch((e) => {
+          setNotes([]);
+          toast(errMsg(e), { tone: "danger" });
+        }),
+    [projectId, toast],
+  );
 
   useEffect(() => {
     load();
-  }, [projectId]);
+  }, [load]);
 
-  const run = async (fn) => {
-    setError("");
+  const run = async (fn, message) => {
+    setBusy(true);
     try {
       await fn();
       await load();
+      if (message) toast(message, { tone: "success" });
+      return true;
     } catch (e) {
-      setError(errMsg(e));
+      toast(errMsg(e), { tone: "danger" });
+      return false;
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <Alert>{error}</Alert>
+    <div className="mx-auto max-w-3xl space-y-4">
       {canEdit && (
         <form
-          className="card space-y-2"
-          onSubmit={(e) => {
+          className="surface-card space-y-3 p-4"
+          onSubmit={async (e) => {
             e.preventDefault();
-            run(async () => {
-              await api.post(`/notes/${projectId}`, { content: draft });
-              setDraft("");
-            });
+            if (await run(() => api.post(`/notes/${projectId}`, { content: draft.trim() }), "Note added")) setDraft("");
           }}
         >
-          <textarea className="input" rows={3} placeholder="Write a note…" value={draft} onChange={(e) => setDraft(e.target.value)} required />
-          <div className="text-right"><button className="btn">Add note</button></div>
+          <Textarea
+            aria-label="New note"
+            rows={3}
+            placeholder="Share an update, a decision or a link with the team"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Button type="submit" variant="solid" disabled={busy || !draft.trim()}>
+              Post note
+            </Button>
+          </div>
         </form>
       )}
 
       {notes === null ? (
-        <p className="text-slate-500">Loading…</p>
+        <>
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </>
       ) : notes.length === 0 ? (
-        <div className="card text-center text-slate-500">No notes yet.</div>
+        <EmptyState icon={NotebookPen} title="No notes yet">
+          {canEdit ? "Post the first one above." : "Admins can post notes for the whole team here."}
+        </EmptyState>
       ) : (
         notes.map((n) => (
-          <div key={n._id} className="card">
+          <article key={n._id} className="surface-card p-4 sm:p-5">
+            <header className="flex items-center gap-3">
+              {typeof n.createdBy === "object" && <UserAvatar user={n.createdBy} className="size-7" />}
+              <div className="min-w-0 flex-1 text-xs text-muted-foreground">
+                {typeof n.createdBy === "object" && (
+                  <span className="font-medium text-foreground">{displayName(n.createdBy)} </span>
+                )}
+                <time dateTime={n.updatedAt}>{relativeTime(n.updatedAt || n.createdAt)}</time>
+                {n.updatedAt !== n.createdAt && " (edited)"}
+              </div>
+              {canEdit && editingId !== n._id && (
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    aria-label="Edit note"
+                    onClick={() => {
+                      setEditingId(n._id);
+                      setEditText(n.content);
+                    }}
+                  >
+                    <Pencil aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 hover:bg-danger/10 hover:text-danger"
+                    aria-label="Delete note"
+                    onClick={() => setDeleting(n)}
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </Button>
+                </div>
+              )}
+            </header>
+
             {editingId === n._id ? (
-              <div className="space-y-2">
-                <textarea className="input" rows={4} value={editText} onChange={(e) => setEditText(e.target.value)} />
+              <div className="mt-3 space-y-2">
+                <Textarea aria-label="Edit note" rows={4} value={editText} onChange={(e) => setEditText(e.target.value)} />
                 <div className="flex justify-end gap-2">
-                  <button className="btn-ghost" onClick={() => setEditingId(null)}>Cancel</button>
-                  <button
-                    className="btn"
-                    onClick={() =>
-                      run(async () => {
-                        await api.put(`/notes/${projectId}/n/${n._id}`, { content: editText });
+                  <Button variant="ghost" onClick={() => setEditingId(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="solid"
+                    disabled={busy || !editText.trim()}
+                    onClick={async () => {
+                      if (await run(() => api.put(`/notes/${projectId}/n/${n._id}`, { content: editText.trim() }), "Note saved"))
                         setEditingId(null);
-                      })
-                    }
+                    }}
                   >
                     Save
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <>
-                <p className="whitespace-pre-wrap text-sm">{n.content}</p>
-                <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-                  <span>
-                    {n.createdBy?.fullName || n.createdBy?.userName ? `${n.createdBy.fullName || n.createdBy.userName} · ` : ""}
-                    {new Date(n.updatedAt || n.createdAt).toLocaleString()}
-                  </span>
-                  {canEdit && (
-                    <span className="flex gap-1">
-                      <button className="btn-ghost py-0.5" onClick={() => { setEditingId(n._id); setEditText(n.content); }}>Edit</button>
-                      <button className="btn-danger" onClick={() => confirm("Delete this note?") && run(() => api.delete(`/notes/${projectId}/n/${n._id}`))}>
-                        Delete
-                      </button>
-                    </span>
-                  )}
-                </div>
-              </>
+              <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{n.content}</p>
             )}
-          </div>
+          </article>
         ))
       )}
+
+      <ConfirmDialog
+        open={!!deleting}
+        title="Delete this note?"
+        confirmLabel="Delete note"
+        busyLabel="Deleting"
+        cancelLabel="Keep it"
+        busy={busy}
+        onConfirm={async () => {
+          await run(() => api.delete(`/notes/${projectId}/n/${deleting._id}`), "Note deleted");
+          setDeleting(null);
+        }}
+        onCancel={() => setDeleting(null)}
+      >
+        Everyone in the project will lose access to it. This cannot be undone.
+      </ConfirmDialog>
     </div>
   );
 }
