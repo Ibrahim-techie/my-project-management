@@ -178,7 +178,7 @@ const createTaskValidator = () => {
   ];
 };
 
-const updateTaskValidator = [
+const updateTaskValidator = () => [
   // title (optional)
   body("title")
     .optional()

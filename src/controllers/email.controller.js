@@ -39,7 +39,7 @@ const sendEmail = async ({ to, subject, mailgenContent }) => {
 
 // 3. Send email verification email
 const sendVerificationEmail = async ({ email, userName, verificationLink }) => {
-  const mailgenContent = emailverificationContentGenerator(
+  const mailgenContent = emailVerificationContentGenerator(
     userName,
     verificationLink,
   );
