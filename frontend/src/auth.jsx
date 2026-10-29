@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { api, unwrap } from "./api";
+import { Spinner } from "@/components/ui/spinner";
 
 const AuthContext = createContext(null);
 
@@ -44,7 +45,12 @@ export const useAuth = () => useContext(AuthContext);
 export function RequireAuth({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="p-8 text-slate-500">Loading…</div>;
+  if (loading)
+    return (
+      <div className="grid min-h-dvh place-items-center">
+        <Spinner label="Loading your workspace" className="[&_svg]:size-6" />
+      </div>
+    );
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return children;
 }
