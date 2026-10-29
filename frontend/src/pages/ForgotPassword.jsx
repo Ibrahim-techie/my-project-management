@@ -1,32 +1,53 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { api, errMsg } from "../api";
-import { Alert, AuthCard, Field } from "../components/ui.jsx";
+import {
+  AuthLink,
+  AuthShell,
+  Field,
+  FormError,
+  SubmitButton,
+  TextInput,
+  useAuthSubmit,
+} from "@/components/auth-shell";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+  const { busy, error, run } = useAuthSubmit(async () => {
+    try {
+      await api.post("/auth/forgot-password", { email });
+    } catch (e) {
+      return errMsg(e);
+    }
+  });
 
   const submit = async (e) => {
     e.preventDefault();
-    setError("");
-    try {
-      const res = await api.post("/auth/forgot-password", { email });
-      setMsg(res.data.message);
-    } catch (err) {
-      setError(errMsg(err));
-    }
+    if (await run()) setSent(true);
   };
 
   return (
-    <AuthCard title="Reset your password" footer={<Link className="text-indigo-600" to="/login">Back to sign in</Link>}>
-      <form onSubmit={submit} className="space-y-4">
-        <Alert>{error}</Alert>
-        <Alert kind="success">{msg}</Alert>
-        <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <button className="btn w-full">Send reset link</button>
-      </form>
-    </AuthCard>
+    <AuthShell
+      title="Reset your password"
+      description="Enter your email and we will send you a link to choose a new one."
+      below={<AuthLink to="/login">Back to sign in</AuthLink>}
+    >
+      {sent ? (
+        <p className="text-center text-sm text-muted-foreground">
+          If an account exists for <span className="font-medium text-foreground">{email}</span>, a reset link is on
+          its way.
+        </p>
+      ) : (
+        <form onSubmit={submit} className="space-y-4" noValidate>
+          <FormError message={error} />
+          <Field label="Email">
+            <TextInput type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+          </Field>
+          <SubmitButton busy={busy} busyLabel="Sending">
+            Send reset link
+          </SubmitButton>
+        </form>
+      )}
+    </AuthShell>
   );
 }
