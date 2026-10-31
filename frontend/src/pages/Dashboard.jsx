@@ -5,6 +5,8 @@ import { ArrowUpRight, CircleCheck, FolderKanban, ListTodo } from "lucide-react"
 import { api, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
 import { EmptyState, SectionTitle } from "@/components/page";
+import { PendingInvites } from "@/components/pending-invites";
+import { Reveal } from "@/components/reveal";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Progress } from "@/components/ui/progress";
@@ -18,7 +20,7 @@ const greeting = () => {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { projects } = useOutletContext();
+  const { projects, reloadProjects } = useOutletContext();
   const [myTasks, setMyTasks] = useState(null);
   const still = useReducedMotion();
 
@@ -69,6 +71,8 @@ export default function Dashboard() {
           Here is what needs you today, across <span className="highlight">every project you are part of</span>.
         </p>
       </section>
+
+      <PendingInvites onJoined={reloadProjects} />
 
       <section aria-label="Summary" className="grid grid-cols-3 gap-3 sm:gap-6">
         {stats.map(({ label, value, icon: Icon, tint, progress }, i) => (
@@ -169,8 +173,10 @@ export default function Dashboard() {
           </EmptyState>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.slice(0, 3).map(({ project, role }) => (
-              <ProjectCard key={project._id} project={project} role={role} />
+            {projects.slice(0, 3).map(({ project, role }, i) => (
+              <Reveal key={project._id} index={i} className="h-full">
+                <ProjectCard project={project} role={role} />
+              </Reveal>
             ))}
           </div>
         )}
@@ -183,7 +189,7 @@ export function ProjectCard({ project, role }) {
   return (
     <Link
       to={`/projects/${project._id}`}
-      className="surface-card group flex flex-col p-5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="surface-card group flex h-full flex-col p-5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <div className="flex items-start justify-between gap-3">
         <span

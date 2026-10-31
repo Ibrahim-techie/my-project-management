@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Projects from "./pages/Projects.jsx";
 import ProjectDetail from "./pages/ProjectDetail.jsx";
 import Account from "./pages/Account.jsx";
+import AcceptInvite from "./pages/AcceptInvite.jsx";
 
 export default function App() {
   return (
@@ -17,6 +18,14 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route
+        path="/invites/:token"
+        element={
+          <RequireAuth>
+            <AcceptInvite />
+          </RequireAuth>
+        }
+      />
       <Route
         element={
           <RequireAuth>
