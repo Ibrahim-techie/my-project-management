@@ -10,6 +10,8 @@ import Projects from "./pages/Projects.jsx";
 import ProjectDetail from "./pages/ProjectDetail.jsx";
 import Account from "./pages/Account.jsx";
 import AcceptInvite from "./pages/AcceptInvite.jsx";
+import VerifyEmail from "./pages/VerifyEmail.jsx";
+import Notfound from "./components/ui/Notfound.jsx";
 
 export default function App() {
   return (
@@ -18,6 +20,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email/:token" element={<VerifyEmail />} />
       <Route
         path="/invites/:token"
         element={
@@ -38,7 +41,7 @@ export default function App() {
         <Route path="/projects/:projectId" element={<ProjectDetail />} />
         <Route path="/account" element={<Account />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Notfound />} />
     </Routes>
   );
 }

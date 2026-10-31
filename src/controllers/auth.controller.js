@@ -41,6 +41,17 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
+// The emailed link opens the frontend's /verify-email page, which calls the
+// API. It must not start with /api: that prefix is proxied straight to the
+// backend, so a React route there would never render.
+const verificationLinkFor = (token) => {
+  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
+  if (!frontendUrl) {
+    throw new APIError(500, "FRONTEND_URL is not configured");
+  }
+  return `${frontendUrl}/verify-email/${encodeURIComponent(token)}`;
+};
+
 const registerUser = asynchandler(async (req, res) => {
   const { userName, email, password, fullName } = req.body;
 
@@ -94,7 +105,7 @@ const registerUser = asynchandler(async (req, res) => {
     await sendVerificationEmail({
       email: newUser.email,
       userName: newUser.userName,
-      verificationLink: `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${token}`,
+      verificationLink: verificationLinkFor(token),
     });
   } catch (emailError) {
     try {
@@ -284,7 +295,7 @@ const resendEmailVerification = asynchandler(async (req, res) => {
   await sendVerificationEmail({
     email: user.email,
     userName: user.userName,
-    verificationLink: `${req.protocol}://${req.get("host")}/api/v1/auth/verify-email/${token}`,
+    verificationLink: verificationLinkFor(token),
   });
 
   return res
