@@ -7,6 +7,7 @@ import {
   mailGenerator,
   emailVerificationContentGenerator,
   forgotPasswordEmailContentGenerator,
+  emailProjectInviteContentGenerator,
 } from "../utils/mail.js";
 
 // 1. Configure Nodemailer
@@ -65,11 +66,27 @@ const sendPasswordResetEmail = async ({ email, userName, resetLink }) => {
   });
 };
 
-//5 Sending Email for Project member Invite to User
+// 5. Send a project invite to a registered user
+const sendProjectInviteEmail = async ({ email, userName, inviteLink, inviterName, projectName }) => {
+  const mailgenContent = emailProjectInviteContentGenerator(
+    userName,
+    inviteLink,
+    inviterName,
+    projectName,
+    { expiry: "7 days", buttonColor: "#08B89D" },
+  );
+
+  return await sendEmail({
+    to: email,
+    subject: `You're invited to join ${projectName}`,
+    mailgenContent,
+  });
+};
 
 export {
   transporter,
   sendEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
+  sendProjectInviteEmail,
 };
