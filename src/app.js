@@ -50,12 +50,16 @@ import projectRoutes from "./routes/project.route.js";
 import taskroutes from "./routes/tasks.routes.js"
 import subtaskRoutes from "./routes/subtask.routes.js";
 import noteRoutes from "./routes/note.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import inviteRoutes from "./routes/invite.routes.js";
 app.use("/api/v1/healthcheck", healthcheckRoutes);
 app.use("/api/v1/task", taskroutes);
 app.use("/api/v1/task", subtaskRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/project", projectRoutes);
 app.use("/api/v1/notes/", noteRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/invites", inviteRoutes);
 
 app.get("/", (req, res) => {
   res.json({ server: "The server is running ✅  " });
