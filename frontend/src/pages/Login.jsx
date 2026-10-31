@@ -27,11 +27,15 @@ export default function Login() {
     }
   });
 
-  if (user) return <Navigate to="/" replace />;
+  // Signing in sets `user` before submit resolves, so this redirect is what
+  // actually runs: send people back to the page that asked them to sign in
+  const from = location.state?.from;
+  const returnTo = from ? `${from.pathname}${from.search || ""}` : "/";
+  if (user) return <Navigate to={returnTo} replace />;
 
   const submit = async (e) => {
     e.preventDefault();
-    if (await run()) navigate(location.state?.from?.pathname || "/", { replace: true });
+    if (await run()) navigate(returnTo, { replace: true });
   };
 
   return (
