@@ -2,7 +2,6 @@ import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import validateRequest from "../middlewares/validator.middleware.js";
 import {
-  addMemberToProject,
   createProject,
   deleteProjectById,
   listProjectMembers,
@@ -14,6 +13,12 @@ import {
 } from "../controllers/project.controllers.js";
 
 import roleProjectPermission from "../middlewares/rolepermission.middleware.js";
+import {
+  createInvite,
+  listProjectInvites,
+  resendInvite,
+  revokeInvite,
+} from "../controllers/invite.controllers.js";
 
 import {
   CreateProjectValidator,
@@ -51,8 +56,20 @@ router
     roleProjectPermission([UserRolesEnum.ADMIN]),
     addMembertoProjectValidator(),
     validateRequest,
-    addMemberToProject,
+    createInvite,
   );
+
+router
+  .route("/:projectId/invites")
+  .get(roleProjectPermission([UserRolesEnum.ADMIN]), listProjectInvites);
+
+router
+  .route("/:projectId/invites/:inviteId")
+  .delete(roleProjectPermission([UserRolesEnum.ADMIN]), revokeInvite);
+
+router
+  .route("/:projectId/invites/:inviteId/resend")
+  .post(roleProjectPermission([UserRolesEnum.ADMIN]), resendInvite);
 
 router
   .route("/:projectId/members/:userId")

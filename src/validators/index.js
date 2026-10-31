@@ -94,6 +94,11 @@ const CreateProjectValidator = () => {
 
 const addMembertoProjectValidator = () => {
   return [
+    body("userId")
+      .optional()
+      .isMongoId()
+      .withMessage("Pick a user to invite"),
+
     body("email")
       .optional()
       .trim()
@@ -110,8 +115,8 @@ const addMembertoProjectValidator = () => {
       .withMessage("Username cannot be empty"),
 
     body().custom((_, { req }) => {
-      if (!req.body.email && !req.body.username) {
-        throw new Error("Provide an email or username");
+      if (!req.body.userId && !req.body.email && !req.body.username) {
+        throw new Error("Pick a user to invite");
       }
       return true;
     }),
