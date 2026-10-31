@@ -10,7 +10,12 @@ import {
   emailProjectInviteContentGenerator,
 } from "../utils/mail.js";
 
-// 1. Configure Nodemailer
+const SENDER_NAME = process.env.EMAIL_SENDER_NAME || "Project Camp";
+const SENDER_EMAIL = process.env.EMAIL_SENDER_ADDRESS || process.env.SMTP_USER;
+const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
+
+// 1. Configure Nodemailer, used when no Brevo key is set (local development).
+// Short timeouts so a blocked SMTP port fails in seconds instead of hanging.
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
@@ -19,7 +24,37 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 20_000,
 });
+
+// Brevo's HTTPS API. Hosts such as Render's free tier block outbound SMTP
+// ports, but ordinary HTTPS gets through.
+const sendWithBrevo = async ({ to, subject, html, text }) => {
+  const res = await fetch(BREVO_URL, {
+    method: "POST",
+    headers: {
+      "api-key": process.env.BREVO_API_KEY,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`Brevo rejected the email (${res.status}): ${body.message || res.statusText}`);
+  }
+  return body;
+};
 
 // 2. Reusable email-sending function
 const sendEmail = async ({ to, subject, mailgenContent }) => {
@@ -27,8 +62,12 @@ const sendEmail = async ({ to, subject, mailgenContent }) => {
 
   const text = mailGenerator.generatePlaintext(mailgenContent);
 
+  if (process.env.BREVO_API_KEY) {
+    return await sendWithBrevo({ to, subject, html, text });
+  }
+
   const info = await transporter.sendMail({
-    from: `"Task Manager" <${process.env.SMTP_USER}>`,
+    from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
     to,
     subject,
     html,
