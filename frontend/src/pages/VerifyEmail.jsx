@@ -5,6 +5,7 @@ import { api, errMsg } from "../api";
 import { useAuth } from "../auth.jsx";
 import { AuthLink, AuthShell } from "@/components/auth-shell";
 import { Spinner } from "@/components/ui/spinner";
+import { ResendVerification } from "@/components/resend-verification";
 
 export default function VerifyEmail() {
   const { token } = useParams();
@@ -46,7 +47,9 @@ export default function VerifyEmail() {
           <p className="text-sm text-subtle-foreground">{state.message}.</p>
           <p className="text-sm text-subtle-foreground">
             Each link works once and expires after an hour. If you already verified, you can sign in now.
+            Otherwise, get a new link:
           </p>
+          <ResendVerification className="pt-1 text-left" />
         </div>
       </AuthShell>
     );

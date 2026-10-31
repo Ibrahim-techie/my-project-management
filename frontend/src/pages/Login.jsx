@@ -12,6 +12,7 @@ import {
   TextInput,
   useAuthSubmit,
 } from "@/components/auth-shell";
+import { ResendVerification } from "@/components/resend-verification";
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -54,6 +55,9 @@ export default function Login() {
     >
       <form onSubmit={submit} className="space-y-4" noValidate>
         <FormError message={error} />
+        {/verify your email/i.test(error || "") && (
+          <ResendVerification email={identifier.includes("@") ? identifier.trim() : ""} />
+        )}
         <Field label="Email or username">
           <TextInput
             value={identifier}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MailCheck } from "lucide-react";
+import { ResendVerification } from "@/components/resend-verification";
 import { api, errMsg } from "../api";
 import {
   AuthLink,
@@ -39,8 +40,10 @@ export default function Register() {
           <MailCheck className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-muted-foreground">
             We sent a verification link to <span className="font-medium text-foreground">{sentTo}</span>. Open it,
-            then sign in.
+            then sign in. It works for one hour.
           </p>
+          <p className="pt-2 text-xs text-muted-foreground">Didn&apos;t get it? Check spam, or</p>
+          <ResendVerification email={sentTo} />
         </div>
       </AuthShell>
     );
