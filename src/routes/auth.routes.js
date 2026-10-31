@@ -18,6 +18,7 @@ import {
   userLoginValidator,
   userforgotPasswordValidator,
   userResetPasswordValidator,
+  userResendVerificationValidator,
   userChangeCurrentPasswordValidator,
 } from "../validators/index.js";
 
@@ -36,6 +37,10 @@ router.route("/verify-email/:token").get(verifyEmail);
 router.route("/refresh-token").post(refreshAccessToken);
 
 router
+  .route("/resend-email-verification")
+  .post(userResendVerificationValidator(), validateRequest, resendEmailVerification);
+
+router
   .route("/forgot-password")
   .post(userforgotPasswordValidator(), validateRequest, forgotPassword);
 
@@ -47,7 +52,6 @@ router
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/change-password").post(verifyJWT,userChangeCurrentPasswordValidator(),validateRequest, changeOldPassword);
-router.route("/resend-email-verification").post(verifyJWT,resendEmailVerification);
 
 
 export default router;

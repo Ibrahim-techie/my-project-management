@@ -272,15 +272,30 @@ const getCurrentUser = asynchandler(async (req, res) => {
 });
 
 //resend Email Token
-const resendEmailVerification = asynchandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+// Public: unverified accounts cannot sign in, so this takes an email instead
+// of a session. The reply is the same whether or not the account exists, and a
+// fresh link is sent at most once a minute per account.
+const RESEND_COOLDOWN_MS = 60_000;
+const VERIFICATION_TTL_MS = 60 * 60_000; // matches generateEmailVerificationToken
 
-  if (!user) {
-    throw new ApiError(404, "User does not exist");
+const resendEmailVerification = asynchandler(async (req, res) => {
+  const genericReply = new ApiResponse(
+    200,
+    "If that account still needs verifying, a new link is on its way",
+    {},
+  );
+
+  const user = await User.findOne({ email: String(req.body.email).toLowerCase().trim() });
+
+  if (!user || user.isEmailVerified) {
+    return res.status(200).json(genericReply);
   }
 
-  if (user.isEmailVerified) {
-    throw new ApiError(409, "Email has already verified ");
+  const issuedAt = user.emailVerificationtokenExpiry
+    ? new Date(user.emailVerificationtokenExpiry).getTime() - VERIFICATION_TTL_MS
+    : 0;
+  if (Date.now() - issuedAt < RESEND_COOLDOWN_MS) {
+    return res.status(200).json(genericReply);
   }
 
   const { token, hashedToken, tokenExpiry } =
@@ -291,16 +306,18 @@ const resendEmailVerification = asynchandler(async (req, res) => {
 
   await user.save({ validateBeforeSave: false });
 
-  // Send verification email again
-  await sendVerificationEmail({
-    email: user.email,
-    userName: user.userName,
-    verificationLink: verificationLinkFor(token),
-  });
+  try {
+    await sendVerificationEmail({
+      email: user.email,
+      userName: user.userName,
+      verificationLink: verificationLinkFor(token),
+    });
+  } catch (error) {
+    console.error("Resending the verification email failed:", error);
+    throw new ApiError(502, "The verification email could not be sent. Please try again.");
+  }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, "email verification initiated", {}));
+  return res.status(200).json(genericReply);
 });
 
 //Refresh Access Token based On referesh Token

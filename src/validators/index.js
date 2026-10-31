@@ -81,6 +81,10 @@ const userforgotPasswordValidator = () => {
   ];
 };
 
+const userResendVerificationValidator = () => {
+  return [body("email").trim().notEmpty().withMessage("Email is required").isEmail().withMessage("Provide a valid email")];
+};
+
 const userResetPasswordValidator = () => {
   return [body("newPassword").notEmpty().withMessage("Password is Required")];
 };
@@ -339,6 +343,7 @@ export {
   userChangeCurrentPasswordValidator,
   userforgotPasswordValidator,
   userResetPasswordValidator,
+  userResendVerificationValidator,
   CreateProjectValidator,
   addMembertoProjectValidator,
   createTaskValidator,
