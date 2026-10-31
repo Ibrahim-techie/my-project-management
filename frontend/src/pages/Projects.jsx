@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { FolderKanban, Search } from "lucide-react";
+import { FolderKanban } from "lucide-react";
 import { api, errMsg, unwrap } from "../api";
 import { EmptyState, PageTitle } from "@/components/page";
 import { ProjectCard } from "./Dashboard.jsx";
+import { Reveal } from "@/components/reveal";
+import { SearchField } from "@/components/search-field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogActions } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
+import { Kbd } from "@/components/ui/kbd";
 import { Input } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { useHotkey } from "@/lib/use-hotkey";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -26,6 +30,7 @@ export default function Projects() {
   const [filter, setFilter] = useState("all");
   const creating = params.get("new") === "1";
   const setCreating = (on) => setParams(on ? { new: "1" } : {}, { replace: true });
+  useHotkey("n", () => setCreating(true), { enabled: !creating });
 
   const visible = (projects || []).filter(({ project, role }) => {
     const q = query.trim().toLowerCase();
@@ -51,22 +56,17 @@ export default function Projects() {
           <Segmented label="Filter projects" options={FILTERS} value={filter} onChange={setFilter} />
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 lg:w-56 lg:flex-none">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              aria-label="Search projects"
-              placeholder="Search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          <Button variant="solid" onClick={() => setCreating(true)}>
+          <SearchField
+            label="Search projects"
+            value={query}
+            onChange={setQuery}
+            className="flex-1 lg:w-56 lg:flex-none"
+          />
+          <Button variant="solid" aria-keyshortcuts="n" title="New project (N)" onClick={() => setCreating(true)}>
             New project
+            <Kbd aria-hidden="true" className="ml-0.5 hidden border-on-brand/20 bg-on-brand/10 text-on-brand/70 lg:inline-flex">
+              N
+            </Kbd>
           </Button>
         </div>
       </div>
@@ -89,8 +89,10 @@ export default function Projects() {
           </EmptyState>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map(({ project, role }) => (
-              <ProjectCard key={project._id} project={project} role={role} />
+            {visible.map(({ project, role }, i) => (
+              <Reveal key={project._id} index={i} className="h-full">
+                <ProjectCard project={project} role={role} />
+              </Reveal>
             ))}
           </div>
         )}

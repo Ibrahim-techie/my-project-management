@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Paperclip, Plus, Search } from "lucide-react";
+import { Paperclip, Plus } from "lucide-react";
 import { api, errMsg, STATUSES, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
 import TaskPanel from "./TaskPanel.jsx";
 import { UserAvatar } from "@/components/user-avatar";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchField } from "@/components/search-field";
+import { Kbd } from "@/components/ui/kbd";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
 import { assigneeId, assigneeOf, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useHotkey } from "@/lib/use-hotkey";
 
 const SCOPES = [
   { value: "all", label: "Everyone" },
@@ -29,6 +31,7 @@ export default function TaskBoard({ projectId, members, canManage }) {
   const openTask = params.get("task"); // a task id or "new"
 
   const setOpenTask = (id) => setParams(id ? { task: id } : {}, { replace: true });
+  useHotkey("n", () => setOpenTask("new"), { enabled: canManage && !openTask });
 
   const load = useCallback(
     () =>
@@ -67,23 +70,24 @@ export default function TaskBoard({ projectId, members, canManage }) {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Segmented label="Whose tasks" options={SCOPES} value={scope} onChange={setScope} className="self-start" />
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 lg:w-56 lg:flex-none">
-            <Search
-              className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              aria-label="Search tasks"
-              placeholder="Search tasks"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
+          <SearchField
+            label="Search tasks"
+            placeholder="Search tasks"
+            value={query}
+            onChange={setQuery}
+            className="flex-1 lg:w-56 lg:flex-none"
+          />
           {canManage && (
-            <Button variant="solid" iconRight={<Plus className="size-4" />} onClick={() => setOpenTask("new")}>
-              New task
+            <Button
+              variant="solid"
+              aria-keyshortcuts="n"
+              title="New task (N)"
+              onClick={() => setOpenTask("new")}
+            >
+              <Plus className="size-4" aria-hidden="true" /> New task
+              <Kbd aria-hidden="true" className="ml-0.5 hidden border-on-brand/20 bg-on-brand/10 text-on-brand/70 lg:inline-flex">
+                N
+              </Kbd>
             </Button>
           )}
         </div>
