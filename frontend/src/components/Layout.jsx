@@ -173,7 +173,7 @@ function SideNav({ projects, className }) {
       </ul>
 
       <div className="min-h-0 overflow-y-auto">
-        <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Your projects</p>
+        <p className="px-2.5 pb-2 text-xs font-medium text-muted-foreground">Your projects</p>
         {projects === null ? null : projects.length === 0 ? (
           <p className="px-2 text-xs text-muted-foreground">No projects yet</p>
         ) : (

@@ -285,7 +285,8 @@
   body {
     @apply bg-background text-foreground font-manrope antialiased;
   }
-  :has(> [data-brand-backdrop]) {
+  :has(> [data-brand-backdrop]),
+  :has(> [data-chai-backdrop]) {
     position: relative;
     isolation: isolate;
     overflow-x: clip;
@@ -318,13 +319,24 @@
   color: transparent;
 }
 
-/* The standard surface for cards and panels: flat, hairline border, no glow */
+/* The standard surface for cards and panels: a hairline border, frosted over
+   the hexagon backdrop, no glow */
 @utility surface-card {
   border-radius: calc(var(--radius) + 4px);
   border: 1px solid var(--border);
-  background: var(--card);
-  transition: border-color 200ms, background-color 200ms;
+  background: color-mix(in oklab, var(--card) 82%, transparent);
+  backdrop-filter: blur(6px);
+  transition: border-color 250ms, background-color 250ms;
   &:hover {
     border-color: var(--card-edge-hover);
   }
+}
+
+/* ChaiUI's signature corners: the main action, and the mirrored secondary beside it */
+@utility btn-asym {
+  border-radius: 0 var(--radius) 0 var(--radius);
+}
+
+@utility btn-asym-mirror {
+  border-radius: var(--radius) 0 var(--radius) 0;
 }
