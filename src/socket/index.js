@@ -67,6 +67,8 @@ const scheduleExpiry = (socket) => {
 
 export const initSocket = (httpServer, allowedOrigins) => {
   io = new Server(httpServer, {
+    // Under /api so it passes through the same proxy as REST (Vite, Vercel rewrite)
+    path: "/api/socket.io",
     cors: { origin: allowedOrigins, credentials: true },
   });
 
