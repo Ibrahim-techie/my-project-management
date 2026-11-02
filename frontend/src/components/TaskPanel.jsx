@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ImagePlus, Paperclip, Pencil, Plus, Trash2, TriangleAlert, X } from "lucide-react";
 import { api, errMsg, STATUSES, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
+import { useProjectEvents } from "../socket.jsx";
 import { UserAvatar } from "@/components/user-avatar";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,13 @@ export default function TaskPanel({ projectId, taskId, members, canManage, onClo
     setEditing(isNew);
     if (taskId && !isNew) load().catch((e) => setError(errMsg(e)));
   }, [taskId, isNew, load]);
+
+  // Someone else edited the open task: refresh it, unless we are mid-edit
+  useProjectEvents(projectId, {
+    "task:updated": (t) => {
+      if (t?._id === taskId && !editing) load().catch(() => {});
+    },
+  });
 
   const title = isNew ? "New task" : editing ? "Edit task" : task?.title || "Task";
 
