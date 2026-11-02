@@ -33,8 +33,11 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // The server already ended the session (e.g. logout on another device)
+  const signOutLocally = () => setUser(null);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, signOutLocally }}>
       {children}
     </AuthContext.Provider>
   );
