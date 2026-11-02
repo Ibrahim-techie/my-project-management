@@ -70,14 +70,14 @@ const emailVerificationContentGenerator = (
     subject,
     body: {
       name,
-      greeting,
+      greeting: name ? "Hi" : "Hello",
       intro,
       details,
       message: action.instructions,
       action,
       outro,
       support,
-      signature,
+      signature: "Thanks",
       plainText,
     },
   };
@@ -149,14 +149,14 @@ const forgotPasswordEmailContentGenerator = (
     subject,
     body: {
       name,
-      greeting,
+      greeting: name ? "Hi" : "Hello",
       intro,
       details,
       message: action.instructions,
       action,
       outro,
       support,
-      signature,
+      signature: "Thanks",
       plainText,
     },
   };
@@ -235,14 +235,90 @@ const emailProjectInviteContentGenerator = (
     subject,
     body: {
       name,
-      greeting,
+      greeting: name ? "Hi" : "Hello",
       intro,
       details,
       message: action.instructions,
       action,
       outro,
       support,
-      signature,
+      signature: "Thanks",
+      plainText,
+    },
+  };
+};
+
+/**
+ * Task assigned email content generator
+ *
+ * @param {string} userName - Assignee display name (optional)
+ * @param {string} taskLink - URL of the project board holding the task
+ * @param {string} assignerName - Name of the admin who assigned it
+ * @param {string} projectName - Project name
+ * @param {string} taskTitle - Title of the assigned task
+ * @param {object} [options] - Optional settings
+ * @param {string} [options.buttonColor] - Hex color for action button
+ * @param {string} [options.description] - Task description, shown when present
+ * @returns {object} Mailgen content object
+ */
+const taskAssignedContentGenerator = (
+  userName,
+  taskLink,
+  assignerName,
+  projectName,
+  taskTitle,
+  options = {},
+) => {
+  const name = userName || "";
+  const assigner = assignerName || "A project admin";
+  const project = projectName || "your project";
+  const title = taskTitle || "a task";
+  const buttonColor = options.buttonColor || "#08B89D";
+  const subject = `New task assigned: ${title}`;
+
+  const greeting = name ? `Hi ${name},` : "Hello,";
+  const intro = `${assigner} assigned you the task "${title}" in "${project}".`;
+  const details = options.description
+    ? `Task details: ${options.description}`
+    : "Open the project to see the task details, subtasks and attachments.";
+  const action = {
+    instructions: "Click the button below to open the task in Project Camp.",
+    button: {
+      color: buttonColor,
+      text: "View Task",
+      link: taskLink,
+    },
+  };
+  const outro =
+    "You are receiving this because you are a member of this project.";
+  const signature = "Thanks,\nProject Camp Team";
+
+  const plainText = [
+    greeting,
+    "",
+    intro,
+    "",
+    details,
+    "",
+    "Open the task:",
+    taskLink,
+    "",
+    outro,
+    "",
+    signature,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    subject,
+    body: {
+      name,
+      greeting: name ? "Hi" : "Hello",
+      intro: [intro, details],
+      action,
+      outro,
+      signature: "Thanks",
       plainText,
     },
   };
@@ -253,4 +329,5 @@ export {
   emailVerificationContentGenerator,
   forgotPasswordEmailContentGenerator,
   emailProjectInviteContentGenerator,
+  taskAssignedContentGenerator,
 };

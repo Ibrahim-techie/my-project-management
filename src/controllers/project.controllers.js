@@ -5,6 +5,16 @@ import ApiError from "../utils/ApiErrors.js";
 import ProjectMember from "../models/projectmember.models.js";
 import mongoose from "mongoose";
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
+import Task from "../models/task.models.js";
+import SubTask from "../models/subtask.models.js";
+import Note from "../models/note.model.js";
+import ProjectInvite from "../models/projectinvite.models.js";
+import {
+  closeProjectRoom,
+  emitToProject,
+  emitToUser,
+  removeUserFromProject,
+} from "../socket/index.js";
 
 const getProjects = asynchandler(async (req, res) => {
   const projects = await ProjectMember.aggregate([
@@ -109,7 +119,22 @@ const deleteProjectById = asynchandler(async (req, res) => {
     throw new ApiError(404, "project not found");
   }
 
-  return res.status(204).json(204, "Project Deleted Successfully");
+  // Remove everything that hangs off the project, otherwise leftover
+  // memberships keep granting access to its tasks and notes.
+  const taskIds = await Task.find({ project: project._id }).distinct("_id");
+  await Promise.all([
+    SubTask.deleteMany({ task: { $in: taskIds } }),
+    Task.deleteMany({ project: project._id }),
+    Note.deleteMany({ project: project._id }),
+    ProjectMember.deleteMany({ project: project._id }),
+    ProjectInvite.deleteMany({ project: project._id }),
+  ]);
+
+  closeProjectRoom(project._id);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Project Deleted Successfully", { projectId: project._id }));
 });
 
 const listProjectMembers = asynchandler(async (req, res) => {
@@ -155,6 +180,10 @@ const updateProjectMemberRoles = asynchandler(async (req, res) => {
     throw new ApiError(404, "Project Member not found");
   }
 
+  const payload = { projectId, userId, role: projectMember.role };
+  emitToProject(projectId, "member:role-updated", payload);
+  emitToUser(userId, "member:role-updated", payload);
+
   return res.json(new ApiResponse(200, projectMember));
 });
 
@@ -169,6 +198,10 @@ const deleteProjectMember = asynchandler(async (req, res) => {
   if (!projectMember) {
     throw new ApiError(404, "Project Member not found");
   }
+
+  // Pull their sockets out of the room first so they miss this and later events
+  removeUserFromProject(projectId, userId);
+  emitToProject(projectId, "member:removed", { projectId, userId });
 
   return res
     .status(200)

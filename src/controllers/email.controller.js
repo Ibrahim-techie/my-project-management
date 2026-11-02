@@ -8,6 +8,7 @@ import {
   emailVerificationContentGenerator,
   forgotPasswordEmailContentGenerator,
   emailProjectInviteContentGenerator,
+  taskAssignedContentGenerator,
 } from "../utils/mail.js";
 
 const SENDER_NAME = process.env.EMAIL_SENDER_NAME || "Project Camp";
@@ -122,7 +123,34 @@ const sendProjectInviteEmail = async ({ email, userName, inviteLink, inviterName
   });
 };
 
+// 6. Tell a member a task was assigned to them
+const sendTaskAssignedEmail = async ({
+  email,
+  userName,
+  taskLink,
+  assignerName,
+  projectName,
+  taskTitle,
+  description,
+}) => {
+  const mailgenContent = taskAssignedContentGenerator(
+    userName,
+    taskLink,
+    assignerName,
+    projectName,
+    taskTitle,
+    { description },
+  );
+
+  return await sendEmail({
+    to: email,
+    subject: mailgenContent.subject,
+    mailgenContent,
+  });
+};
+
 export {
+  sendTaskAssignedEmail,
   transporter,
   sendEmail,
   sendVerificationEmail,

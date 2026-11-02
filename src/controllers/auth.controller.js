@@ -10,6 +10,7 @@ import asynchandler from "../utils/asynchandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiErrors.js";
 import jwt from "jsonwebtoken";
+import { disconnectUser } from "../socket/index.js";
 
 const authCookieOptions = {
   httpOnly: true,
@@ -131,7 +132,7 @@ const registerUser = asynchandler(async (req, res) => {
   }
 
   const createdUser = await User.findById(newUser._id).select(
-    "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken",
+    "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken     -tokenVersion",
   );
 
   if (!createdUser) {
@@ -217,7 +218,7 @@ const loginUser = asynchandler(async (req, res) => {
   );
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken",
+    "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken     -tokenVersion",
   );
 
   // cookies logic here ..
@@ -255,6 +256,8 @@ const logoutUser = asynchandler(async (req, res) => {
       new: true,
     },
   );
+
+  disconnectUser(req.user._id, "logout");
 
   return res
     .status(200)
@@ -462,6 +465,8 @@ const resetForgotPassword = asynchandler(async (req, res) => {
   user.refreshToken = undefined;
   await user.save({ validateBeforeSave: false });
 
+  disconnectUser(user._id, "password_reset");
+
   return res
     .status(200)
     .clearCookie("accessToken", authCookieOptions)
@@ -493,6 +498,8 @@ const changeOldPassword = asynchandler(async (req, res) => {
   user.refreshToken = undefined;
 
   await user.save({ validateBeforeSave: false });
+
+  disconnectUser(user._id, "password_changed");
 
   return res
     .status(200)

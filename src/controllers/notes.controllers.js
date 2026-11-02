@@ -2,26 +2,29 @@ import Note from "../models/note.model.js";
 import asynchandler from "../utils/asynchandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiErrors.js";
-import Project from "../models/project.models.js";
 import mongoose from "mongoose";
+import { emitToProject } from "../socket/index.js";
+
+// Every note route runs roleProjectPermission first, which already requires a
+// membership in this project, and memberships are deleted with the project.
+// So the project is known to exist here and needs no extra lookup.
+
+const noteFilter = (projectId, noteId) => ({
+  _id: new mongoose.Types.ObjectId(noteId),
+  project: new mongoose.Types.ObjectId(projectId),
+});
 
 const createNote = asynchandler(async (req, res) => {
   const { projectId } = req.params;
   const { content } = req.body;
-
-  const project = await Project.exists({
-    _id: new mongoose.Types.ObjectId(projectId),
-  });
-
-  if (!project) {
-    throw new ApiError(404, "Project Not Found to Add Notes");
-  }
 
   const note = await Note.create({
     project: new mongoose.Types.ObjectId(projectId),
     createdBy: new mongoose.Types.ObjectId(req.user._id),
     content,
   });
+
+  emitToProject(projectId, "note:created", note);
 
   return res
     .status(201)
@@ -30,14 +33,6 @@ const createNote = asynchandler(async (req, res) => {
 
 const getNotes = asynchandler(async (req, res) => {
   const { projectId } = req.params;
-
-  const project = await Project.exists({
-    _id: new mongoose.Types.ObjectId(projectId),
-  });
-
-  if (!project) {
-    throw new ApiError(404, "Project Not Found to Get Notes");
-  }
 
   const notes = await Note.find({
     project: new mongoose.Types.ObjectId(projectId),
@@ -54,22 +49,10 @@ const getNotes = asynchandler(async (req, res) => {
 
 const updateNote = asynchandler(async (req, res) => {
   const { projectId, noteId } = req.params;
-
   const { content } = req.body;
 
-  const project = await Project.exists({
-    _id: new mongoose.Types.ObjectId(projectId),
-  });
-
-  if (!project) {
-    throw new ApiError(404, "Project Not Found to Add Notes");
-  }
-
   const note = await Note.findOneAndUpdate(
-    {
-      _id: new mongoose.Types.ObjectId(noteId),
-      project: new mongoose.Types.ObjectId(projectId),
-    },
+    noteFilter(projectId, noteId),
     {
       $set: {
         ...(content !== undefined && { content }),
@@ -85,6 +68,8 @@ const updateNote = asynchandler(async (req, res) => {
     throw new ApiError(404, "Note Not Found to Update");
   }
 
+  emitToProject(projectId, "note:updated", note);
+
   return res
     .status(200)
     .json(new ApiResponse(200, "Note updated successfully", note));
@@ -93,22 +78,13 @@ const updateNote = asynchandler(async (req, res) => {
 const deleteNote = asynchandler(async (req, res) => {
   const { projectId, noteId } = req.params;
 
-  const project = await Project.exists({
-    _id: new mongoose.Types.ObjectId(projectId),
-  });
-
-  if (!project) {
-    throw new ApiError(404, "Project Not Found to Add Notes");
-  }
-
-  const note = await Note.findOneAndDelete({
-    _id: new mongoose.Types.ObjectId(noteId),
-    project: new mongoose.Types.ObjectId(projectId),
-  });
+  const note = await Note.findOneAndDelete(noteFilter(projectId, noteId));
 
   if (!note) {
     throw new ApiError(404, "Note not found to delete");
   }
+
+  emitToProject(projectId, "note:deleted", { projectId, noteId: note._id });
 
   return res
     .status(200)
@@ -118,18 +94,7 @@ const deleteNote = asynchandler(async (req, res) => {
 const getNoteById = asynchandler(async (req, res) => {
   const { projectId, noteId } = req.params;
 
-  const project = await Project.exists({
-    _id: new mongoose.Types.ObjectId(projectId),
-  });
-
-  if (!project) {
-    throw new ApiError(404, "Project Not Found to Add Notes");
-  }
-
-  const note = await Note.findOne({
-    _id: new mongoose.Types.ObjectId(noteId),
-    project: new mongoose.Types.ObjectId(projectId),
-  });
+  const note = await Note.findOne(noteFilter(projectId, noteId));
 
   if (!note) {
     throw new ApiError(404, "Note not found");
@@ -139,4 +104,5 @@ const getNoteById = asynchandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, "Note fetched successfully", note));
 });
-export { createNote, getNotes, updateNote, deleteNote,getNoteById };
+
+export { createNote, getNotes, updateNote, deleteNote, getNoteById };

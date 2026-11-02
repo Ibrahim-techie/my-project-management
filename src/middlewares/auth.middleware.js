@@ -3,8 +3,7 @@ import ApiError from "../utils/ApiErrors.js";
 import jwt from "jsonwebtoken";
 import User from "../models/user.models.js";
 
-
-//accessToken middleware 
+//accessToken middleware
 export const verifyJWT = asynchandler(async (req, res, next) => {
   const token =
     req.cookies?.accessToken ||
@@ -15,7 +14,7 @@ export const verifyJWT = asynchandler(async (req, res, next) => {
   try {
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const user = await User.findById(decodedToken._id).select(
-      "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken"
+      "-password -emailVerificationToken -emailVerificationtokenExpiry  -refreshToken",
     );
     if (!user) return next(new ApiError(401, "Invalid Access Token"));
     if (decodedToken.tokenVersion !== user.tokenVersion) {
@@ -24,7 +23,10 @@ export const verifyJWT = asynchandler(async (req, res, next) => {
     req.user = user; // ADD the User details decoded in AT
     next();
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return next(new ApiError(401, "Access token expired"));
+    }
+
     return next(new ApiError(401, "Invalid Access Token"));
   }
 });
-

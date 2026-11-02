@@ -5,25 +5,28 @@ import SubTask from "../models/subtask.models.js";
 import mongoose from "mongoose";
 import Task from "../models/task.models.js";
 import { AvailableTaskStatus, TaskStatusEnum, UserRolesEnum } from "../utils/constants.js";
+import { emitToProject } from "../socket/index.js";
 
+// Existence check only; nothing here needs the task document itself
 const requireTaskInProject = async (projectId, taskId) => {
-  const task = await Task.findOne({ _id: taskId, project: projectId });
-  if (!task) throw new ApiError(404, "Task not found in this project");
-  return task;
+  const exists = await Task.exists({ _id: taskId, project: projectId });
+  if (!exists) throw new ApiError(404, "Task not found in this project");
 };
 
 // Create subtask
 const createSubTask = asynchandler(async (req, res) => {
-  const { taskId } = req.params;
+  const { projectId, taskId } = req.params;
   const { title, status } = req.body;
 
-  await requireTaskInProject(req.params.projectId, taskId);
+  await requireTaskInProject(projectId, taskId);
 
   const subtask = await SubTask.create({
     title,
     status,
     task: new mongoose.Types.ObjectId(taskId),
   });
+
+  emitToProject(projectId, "subtask:created", { projectId, taskId, subtask });
 
   return res
     .status(201)
@@ -51,10 +54,10 @@ const getSubTasks = asynchandler(async (req, res) => {
 
 // Update a subtask
 const updateSubTask = asynchandler(async (req, res) => {
-  const { taskId, subTaskId } = req.params;
+  const { projectId, taskId, subTaskId } = req.params;
   const { title, status } = req.body;
 
-  await requireTaskInProject(req.params.projectId, taskId);
+  await requireTaskInProject(projectId, taskId);
 
   const update = {
     ...(title !== undefined && { title }),
@@ -83,6 +86,8 @@ const updateSubTask = asynchandler(async (req, res) => {
   );
 
   if (!subTask) throw new ApiError(404, "Subtask not found");
+
+  emitToProject(projectId, "subtask:updated", { projectId, taskId, subtask: subTask });
 
   return res
     .status(200)
@@ -122,6 +127,8 @@ const updateSubTaskStatus = asynchandler(async (req, res) => {
 
   if (!subTask) throw new ApiError(404, "Subtask not found");
 
+  emitToProject(projectId, "subtask:updated", { projectId, taskId, subtask: subTask });
+
   return res
     .status(200)
     .json(
@@ -141,6 +148,8 @@ const deleteSubTask = asynchandler(async (req, res) => {
   });
 
   if (!deleted) throw new ApiError(404, "Subtask not found");
+
+  emitToProject(projectId, "subtask:deleted", { projectId, taskId, subTaskId: deleted._id });
 
   return res
     .status(200)

@@ -5,6 +5,47 @@ import Task from "../models/task.models.js";
 import Project from "../models/project.models.js";
 import ProjectMember from "../models/projectmember.models.js";
 import mongoose from "mongoose";
+import SubTask from "../models/subtask.models.js";
+import User from "../models/user.models.js";
+import { emitToProject, emitToUser } from "../socket/index.js";
+import { sendTaskAssignedEmail } from "./email.controller.js";
+
+const taskLinkFor = (projectId) => {
+  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
+  return frontendUrl ? `${frontendUrl}/projects/${projectId}` : null;
+};
+
+// Socket ping + email to the new assignee. Skipped when someone assigns a task
+// to themselves. The email runs in the background, so a slow or failing mail
+// provider never delays or fails the admin's request.
+const notifyAssignee = ({ task, projectId, projectName, assigner }) => {
+  const assigneeId = task.assignedTo?.toString();
+  if (!assigneeId || assigneeId === assigner._id.toString()) return;
+
+  emitToUser(assigneeId, "task:assigned", { projectId, task });
+
+  const taskLink = taskLinkFor(projectId);
+  if (!taskLink) {
+    console.error("[task-email] FRONTEND_URL is not configured, skipping email");
+    return;
+  }
+
+  (async () => {
+    const assignee = await User.findById(assigneeId).select("email userName fullName");
+    if (!assignee?.email) return;
+    await sendTaskAssignedEmail({
+      email: assignee.email,
+      userName: assignee.fullName || assignee.userName,
+      taskLink,
+      assignerName: assigner.fullName || assigner.userName,
+      projectName,
+      taskTitle: task.title,
+      description: task.description,
+    });
+  })().catch((error) => {
+    console.error(`[task-email] could not notify assignee of task ${task._id}:`, error.message);
+  });
+};
 
 const getTasks = asynchandler(async (req, res) => {
   const { projectId } = req.params;
@@ -91,6 +132,9 @@ const createTask = asynchandler(async (req, res) => {
     assignedBy: new mongoose.Types.ObjectId(req.user._id),
     attachments: attachements,
   });
+
+  emitToProject(projectId, "task:created", task);
+  notifyAssignee({ task, projectId, projectName: project.name, assigner: req.user });
 
   return res
     .status(201)
@@ -197,6 +241,23 @@ const updateTask = asynchandler(async (req, res) => {
     }
   }
 
+  // The previous assignee only matters when the assignee may change
+  let previousAssignee = null;
+  if (assignedTo) {
+    const previous = await Task.findOne(
+      {
+        project: new mongoose.Types.ObjectId(projectId),
+        _id: new mongoose.Types.ObjectId(taskId),
+      },
+      { assignedTo: 1 },
+    ).lean();
+
+    if (!previous) {
+      throw new ApiError(400, "No Task Found");
+    }
+    previousAssignee = previous.assignedTo?.toString();
+  }
+
   const task = await Task.findOneAndUpdate(
     {
       project: new mongoose.Types.ObjectId(projectId),
@@ -218,6 +279,12 @@ const updateTask = asynchandler(async (req, res) => {
     throw new ApiError(400, "No Task Found");
   }
 
+  emitToProject(projectId, "task:updated", task);
+  if (assignedTo && task.assignedTo?.toString() !== previousAssignee) {
+    const project = await Project.findById(projectId).select("name").lean();
+    notifyAssignee({ task, projectId, projectName: project?.name, assigner: req.user });
+  }
+
   res.status(200).json(new ApiResponse(200, "Task updated successfully", task));
 });
 
@@ -232,6 +299,10 @@ const deleteTask = asynchandler(async (req, res) => {
   if (!del) {
     throw new ApiError(400, "Task Not Found");
   }
+
+  await SubTask.deleteMany({ task: del._id });
+
+  emitToProject(projectId, "task:deleted", { projectId, taskId: del._id });
 
   return res
     .status(200)

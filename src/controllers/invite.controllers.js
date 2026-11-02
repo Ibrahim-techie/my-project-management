@@ -7,6 +7,7 @@ import ProjectMember from "../models/projectmember.models.js";
 import User from "../models/user.models.js";
 import ProjectInvite, { InviteStatusEnum, hashInviteToken } from "../models/projectinvite.models.js";
 import { sendProjectInviteEmail } from "./email.controller.js";
+import { emitToProject } from "../socket/index.js";
 
 const PUBLIC_USER_FIELDS = "userName fullName avatar";
 
@@ -216,6 +217,14 @@ const respond = async (invite, user, accept) => {
   invite.status = accept ? InviteStatusEnum.ACCEPTED : InviteStatusEnum.DECLINED;
   invite.respondedAt = new Date();
   await invite.save();
+
+  if (projectId) {
+    emitToProject(projectId, "member:joined", {
+      projectId,
+      user: { _id: user._id, userName: user.userName, fullName: user.fullName, avatar: user.avatar },
+      role: invite.role,
+    });
+  }
   return projectId;
 };
 
