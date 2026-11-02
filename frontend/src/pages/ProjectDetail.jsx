@@ -31,7 +31,11 @@ export default function ProjectDetail() {
   const [error, setError] = useState("");
 
   const loadMembers = useCallback(
-    () => api.get(`/project/${projectId}/members`).then((res) => setMembers(unwrap(res) || [])),
+    // skip memberships whose user no longer resolves; the task form needs m.user._id
+    () =>
+      api
+        .get(`/project/${projectId}/members`)
+        .then((res) => setMembers((unwrap(res) || []).filter((m) => m?.user?._id))),
     [projectId],
   );
 
