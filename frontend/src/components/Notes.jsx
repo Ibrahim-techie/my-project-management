@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { NotebookPen, Pencil, Trash2 } from "lucide-react";
 import { api, errMsg, unwrap } from "../api";
+import { useProjectEvents } from "../socket.jsx";
 import { EmptyState } from "@/components/page";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,12 @@ export default function Notes({ projectId, canEdit }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useProjectEvents(projectId, {
+    "note:created": load,
+    "note:updated": load,
+    "note:deleted": load,
+  });
 
   const run = async (fn, message) => {
     setBusy(true);
