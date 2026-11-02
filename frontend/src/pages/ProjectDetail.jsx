@@ -3,6 +3,7 @@ import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom
 import { ChevronLeft, Pencil, Trash2 } from "lucide-react";
 import { api, errMsg, ROLES, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
+import { useProjectEvents } from "../socket.jsx";
 import { ProjectDialog } from "./Projects.jsx";
 import TaskBoard from "../components/TaskBoard.jsx";
 import Notes from "../components/Notes.jsx";
@@ -48,6 +49,21 @@ export default function ProjectDetail() {
       .catch((e) => setError(errMsg(e)));
     loadMembers().catch(() => {});
   }, [projectId, loadMembers]);
+
+  const leaveProject = (message) => {
+    toast(message, { tone: "danger" });
+    reloadProjects();
+    navigate("/projects", { replace: true });
+  };
+
+  useProjectEvents(projectId, {
+    "member:joined": () => loadMembers().catch(() => {}),
+    "member:removed": () => loadMembers().catch(() => {}),
+    "member:role-updated": () => loadMembers().catch(() => {}),
+    "project:removed": () => leaveProject("You were removed from this project"),
+    // the admin who deleted it is already navigating away
+    "project:deleted": () => !busy && leaveProject("This project was deleted"),
+  });
 
   const role = members.find((m) => m.user?._id === user._id)?.role;
   const isAdmin = role === ROLES.ADMIN;
