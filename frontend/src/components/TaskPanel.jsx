@@ -259,6 +259,15 @@ function Subtasks({ projectId, taskId, canManage }) {
     load().catch(() => setItems([]));
   }, [load]);
 
+  const reloadIfMine = (p) => {
+    if (String(p?.taskId) === String(taskId)) load().catch(() => {});
+  };
+  useProjectEvents(projectId, {
+    "subtask:created": reloadIfMine,
+    "subtask:updated": reloadIfMine,
+    "subtask:deleted": reloadIfMine,
+  });
+
   const run = async (fn) => {
     try {
       await fn();
