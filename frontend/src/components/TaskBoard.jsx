@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Paperclip, Plus } from "lucide-react";
 import { api, errMsg, STATUSES, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
+import { useProjectEvents } from "../socket.jsx";
 import TaskPanel from "./TaskPanel.jsx";
 import { UserAvatar } from "@/components/user-avatar";
 import { Alert } from "@/components/ui/alert";
@@ -45,6 +46,17 @@ export default function TaskBoard({ projectId, members, canManage }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Live updates from other people. Refetch rather than patch locally: socket
+  // payloads carry the raw assignee id, the list needs the populated user.
+  useProjectEvents(projectId, {
+    "task:created": load,
+    "task:updated": load,
+    "task:deleted": ({ taskId }) => {
+      setTasks((ts) => ts?.filter((t) => t._id !== String(taskId)) ?? ts);
+      if (openTask === String(taskId)) setOpenTask(null);
+    },
+  });
 
   const move = async (taskId, status) => {
     const task = tasks.find((t) => t._id === taskId);
