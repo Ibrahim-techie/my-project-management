@@ -36,6 +36,12 @@ const taskSchema = new Schema(
       default: TaskStatusEnum.TODO,
     },
 
+    // Optional deadline, stored as midnight UTC of the chosen day
+    dueDate: {
+      type: Date,
+      default: null,
+    },
+
     attachments: {
       type: [
         {

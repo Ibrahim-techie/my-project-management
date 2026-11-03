@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ImagePlus, Paperclip, Pencil, Plus, Trash2, TriangleAlert, X } from "lucide-react";
+import { CalendarPlus, ImagePlus, Paperclip, Pencil, Plus, Trash2, TriangleAlert, X } from "lucide-react";
 import { api, errMsg, STATUSES, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
 import { useProjectEvents } from "../socket.jsx";
@@ -17,7 +17,8 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
-import { STATUS_LABEL, assigneeId, assigneeOf, displayName, shortDate } from "@/lib/format";
+import { DueChip, DuePicker } from "@/components/due-date";
+import { STATUS_LABEL, assigneeId, assigneeOf, displayName, dueDateValue, shortDate } from "@/lib/format";
 
 const IMAGE_TYPES = ".jpg,.jpeg,.png,.webp";
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -146,7 +147,7 @@ function TaskDetails({ projectId, task, canManage, onEdit, onChanged, onDeleted 
         )}
       </div>
 
-      <dl className="grid grid-cols-2 gap-4 text-sm">
+      <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
         <div>
           <dt className="text-xs text-muted-foreground">Assignee</dt>
           <dd className="mt-1.5 flex items-center gap-2">
@@ -163,6 +164,12 @@ function TaskDetails({ projectId, task, canManage, onEdit, onChanged, onDeleted 
         <div>
           <dt className="text-xs text-muted-foreground">Created</dt>
           <dd className="mt-1.5">{shortDate(task.createdAt)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">Deadline</dt>
+          <dd className="mt-1.5">
+            {task.dueDate ? <DueChip date={task.dueDate} status={task.status} /> : "None"}
+          </dd>
         </div>
       </dl>
 
@@ -252,6 +259,7 @@ function Subtasks({ projectId, taskId, canManage }) {
   const toast = useToast();
   const [items, setItems] = useState(null);
   const [title, setTitle] = useState("");
+  const [due, setDue] = useState("");
 
   const load = useCallback(() => api.get(base).then((res) => setItems(unwrap(res) || [])), [base]);
 
@@ -313,6 +321,23 @@ function Subtasks({ projectId, taskId, canManage }) {
                 >
                   {s.title}
                 </label>
+                {canManage ? (
+                  <DuePicker
+                    value={dueDateValue(s.dueDate)}
+                    label={s.dueDate ? `Change deadline for ${s.title}` : `Set deadline for ${s.title}`}
+                    onChange={(v) => run(() => api.patch(`${base}/${s._id}`, { dueDate: v }))}
+                  >
+                    {s.dueDate ? (
+                      <DueChip date={s.dueDate} status={s.status} />
+                    ) : (
+                      <span className="grid size-9 place-items-center text-muted-foreground opacity-100 transition-opacity hover:text-foreground sm:size-6 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                        <CalendarPlus className="size-3.5" aria-hidden="true" />
+                      </span>
+                    )}
+                  </DuePicker>
+                ) : (
+                  <DueChip date={s.dueDate} status={s.status} />
+                )}
                 {canManage && (
                   <button
                     type="button"
@@ -336,12 +361,22 @@ function Subtasks({ projectId, taskId, canManage }) {
             e.preventDefault();
             if (!title.trim()) return;
             run(async () => {
-              await api.post(base, { title: title.trim() });
+              await api.post(base, { title: title.trim(), ...(due && { dueDate: due }) });
               setTitle("");
+              setDue("");
             });
           }}
         >
           <Input aria-label="New subtask" placeholder="Add a subtask" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <DuePicker value={due} onChange={setDue} label={due ? "Change subtask deadline" : "Set subtask deadline"} className="shrink-0">
+            {due ? (
+              <DueChip date={due} className="h-10 sm:h-9" />
+            ) : (
+              <span className="grid size-10 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-foreground sm:size-9">
+                <CalendarPlus className="size-4" aria-hidden="true" />
+              </span>
+            )}
+          </DuePicker>
           <Button type="submit" variant="muted" size="icon" aria-label="Add subtask" disabled={!title.trim()}>
             <Plus aria-hidden="true" />
           </Button>
@@ -359,6 +394,7 @@ function TaskForm({ projectId, task, members, onCancel, onSaved }) {
     description: task?.description || "",
     assignedTo: task ? assigneeId(task) : user._id,
     status: task?.status || "todo",
+    dueDate: dueDateValue(task?.dueDate),
   }));
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
@@ -382,6 +418,8 @@ function TaskForm({ projectId, task, members, onCancel, onSaved }) {
     setError("");
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => v && fd.append(k, v));
+    // Send an empty deadline on edit so clearing the field removes it
+    if (task && !form.dueDate) fd.append("dueDate", "");
     files.forEach((f) => fd.append("attachments", f));
     try {
       const res = task
@@ -423,6 +461,9 @@ function TaskForm({ projectId, task, members, onCancel, onSaved }) {
               </option>
             ))}
           </Select>
+        </Field>
+        <Field label="Deadline" aside="Optional">
+          <Input type="date" value={form.dueDate} onChange={set("dueDate")} />
         </Field>
       </div>
 

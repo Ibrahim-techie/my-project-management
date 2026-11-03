@@ -6,6 +6,7 @@ import { useAuth } from "../auth.jsx";
 import { useProjectEvents } from "../socket.jsx";
 import TaskPanel from "./TaskPanel.jsx";
 import { UserAvatar } from "@/components/user-avatar";
+import { DueChip } from "@/components/due-date";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { SearchField } from "@/components/search-field";
@@ -217,7 +218,7 @@ function TaskCard({ task, draggable, onOpen }) {
               <span className="sr-only">attachments</span>
             </span>
           )}
-          <span>{relativeTime(task.updatedAt)}</span>
+          {task.dueDate ? <DueChip date={task.dueDate} status={task.status} /> : <span>{relativeTime(task.updatedAt)}</span>}
         </span>
         {assignee && <UserAvatar user={assignee} className="size-6" />}
       </div>

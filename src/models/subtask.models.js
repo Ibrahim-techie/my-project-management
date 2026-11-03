@@ -21,6 +21,12 @@ const subtaskSchema = new Schema(
       enum: AvailableTaskStatus,
       default: TaskStatusEnum.TODO,
     },
+
+    // Optional deadline, stored as midnight UTC of the chosen day
+    dueDate: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -36,4 +42,3 @@ const subtaskSchema = new Schema(
 // assignedTo	⚖️ Optional	If subtasks can be delegated
 // description	⚖️ Optional	Adds detail
 // priority	⚖️ Optional	Helps ordering
-// dueDate	⚖️ Optional	Independent deadlines

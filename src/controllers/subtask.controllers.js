@@ -16,13 +16,14 @@ const requireTaskInProject = async (projectId, taskId) => {
 // Create subtask
 const createSubTask = asynchandler(async (req, res) => {
   const { projectId, taskId } = req.params;
-  const { title, status } = req.body;
+  const { title, status, dueDate } = req.body;
 
   await requireTaskInProject(projectId, taskId);
 
   const subtask = await SubTask.create({
     title,
     status,
+    dueDate: dueDate || null,
     task: new mongoose.Types.ObjectId(taskId),
   });
 
@@ -55,13 +56,15 @@ const getSubTasks = asynchandler(async (req, res) => {
 // Update a subtask
 const updateSubTask = asynchandler(async (req, res) => {
   const { projectId, taskId, subTaskId } = req.params;
-  const { title, status } = req.body;
+  const { title, status, dueDate } = req.body;
 
   await requireTaskInProject(projectId, taskId);
 
   const update = {
     ...(title !== undefined && { title }),
     ...(status !== undefined && { status }),
+    // An empty value clears the deadline
+    ...(dueDate !== undefined && { dueDate: dueDate || null }),
   };
 
   // If no fields provided, return current subtask or error

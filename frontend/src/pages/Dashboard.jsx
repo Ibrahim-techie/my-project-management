@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight, CircleCheck, FolderKanban, ListTodo } from "lucide-react";
 import { api, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
+import { DueChip } from "@/components/due-date";
 import { EmptyState, SectionTitle } from "@/components/page";
 import { PendingInvites } from "@/components/pending-invites";
 import { Reveal } from "@/components/reveal";
@@ -130,6 +131,7 @@ export default function Dashboard() {
                       {t.projectName} · updated {relativeTime(t.updatedAt)}
                     </p>
                   </div>
+                  <DueChip date={t.dueDate} status={t.status} className="hidden sm:inline-flex" />
                   <Chip tone={t.status}>{STATUS_LABEL[t.status]}</Chip>
                   <ArrowUpRight
                     className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-brand"

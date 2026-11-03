@@ -133,6 +133,14 @@ const addMembertoProjectValidator = () => {
   ];
 };
 
+// Optional deadline as a date ("2026-11-05") or full ISO timestamp.
+// An empty string or null is allowed and means "no deadline".
+const dueDateValidator = () =>
+  body("dueDate")
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .withMessage("dueDate must be a valid date");
+
 const createTaskValidator = () => {
   return [
     body("title")
@@ -158,6 +166,8 @@ const createTaskValidator = () => {
       .withMessage("Status must be a string")
       .isIn(AvailableTaskStatus)
       .withMessage(`Status must be one of: ${AvailableTaskStatus.join(", ")}`),
+
+    dueDateValidator(),
 
     // attachement (note: matches your schema key 'attachement')
     body("attachments")
@@ -213,6 +223,8 @@ const updateTaskValidator = () => [
     .isIn(AvailableTaskStatus)
     .withMessage(`status must be one of: ${AvailableTaskStatus.join(", ")}`),
 
+  dueDateValidator(),
+
   // attachments (optional)
   body("attachments")
     .optional()
@@ -266,6 +278,8 @@ const createSubtaskValidator = () => [
     .isIn(AvailableTaskStatus)
     .withMessage(`Status must be one of: ${AvailableTaskStatus.join(", ")}`)
     .bail(),
+
+  dueDateValidator(),
 ];
 
 const updateSubtaskValidator = () => [
@@ -283,9 +297,11 @@ const updateSubtaskValidator = () => [
     .withMessage("Status must be a string")
     .isIn(AvailableTaskStatus)
     .withMessage(`Status must be one of: ${AvailableTaskStatus.join(", ")}`),
+  dueDateValidator(),
   body().custom((_, { req }) => {
-    if (req.body.title === undefined && req.body.status === undefined) {
-      throw new Error("At least one of title or status must be provided");
+    const { title, status, dueDate } = req.body;
+    if (title === undefined && status === undefined && dueDate === undefined) {
+      throw new Error("At least one of title, status or dueDate must be provided");
     }
     return true;
   }),

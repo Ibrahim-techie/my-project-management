@@ -48,3 +48,39 @@ export const assigneeId = (task) => {
   const a = Array.isArray(task?.assignedTo) ? task.assignedTo[0] : task?.assignedTo;
   return a?._id || a || "";
 };
+
+/*
+ * Deadlines are whole days. The picker sends "YYYY-MM-DD", which the backend
+ * stores as midnight UTC, so read them back in UTC to get the same day in
+ * every timezone.
+ */
+export const dueDateValue = (d) => (isValidDate(d) ? new Date(d).toISOString().slice(0, 10) : "");
+
+const localDayKey = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+/**
+ * How a deadline reads next to a task: its label, how urgent it is
+ * ("overdue", "soon" for today or tomorrow, "later", or "done"), and the
+ * full date for tooltips. Null when there is no deadline.
+ */
+export const dueInfo = (d, status) => {
+  const day = dueDateValue(d);
+  if (!day) return null;
+  const days = Math.round((Date.parse(day) - Date.parse(localDayKey())) / 86400000);
+  const date = new Date(d);
+  const sameYear = date.getUTCFullYear() === new Date().getFullYear();
+  const short = date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+    timeZone: "UTC",
+  });
+  const full = date.toLocaleDateString(undefined, { dateStyle: "full", timeZone: "UTC" });
+
+  if (status === "done") return { label: `Due ${short}`, urgency: "done", full };
+  if (days < 0) return { label: days === -1 ? "Overdue · yesterday" : `Overdue · ${short}`, urgency: "overdue", full };
+  if (days === 0) return { label: "Due today", urgency: "soon", full };
+  if (days === 1) return { label: "Due tomorrow", urgency: "soon", full };
+  return { label: `Due ${short}`, urgency: "later", full };
+};

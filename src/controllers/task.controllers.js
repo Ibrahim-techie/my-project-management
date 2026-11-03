@@ -97,7 +97,7 @@ const getAssignedTasks = asynchandler(async (req, res) => {
 const createTask = asynchandler(async (req, res) => {
   const { projectId } = req.params;
 
-  const { title, description, assignedTo, status } = req.body;
+  const { title, description, assignedTo, status, dueDate } = req.body;
 
   const project = await Project.findById(projectId);
 
@@ -129,6 +129,7 @@ const createTask = asynchandler(async (req, res) => {
     project: new mongoose.Types.ObjectId(projectId),
     assignedTo: new mongoose.Types.ObjectId(assigneeId),
     status,
+    dueDate: dueDate || null,
     assignedBy: new mongoose.Types.ObjectId(req.user._id),
     attachments: attachements,
   });
@@ -223,7 +224,7 @@ const getTaskById = asynchandler(async (req, res) => {
 
 const updateTask = asynchandler(async (req, res) => {
   const { projectId, taskId } = req.params;
-  const { title, description, assignedTo, status } = req.body;
+  const { title, description, assignedTo, status, dueDate } = req.body;
 
   const files = req.files || [];
 
@@ -269,6 +270,8 @@ const updateTask = asynchandler(async (req, res) => {
         ...(description && { description }),
         ...(assignedTo && { assignedTo }),
         ...(status && { status }),
+        // An empty value clears the deadline
+        ...(dueDate !== undefined && { dueDate: dueDate || null }),
       },
       ...(attachements.length > 0 && { $push: { attachments: { $each: attachements } } }),
     },
