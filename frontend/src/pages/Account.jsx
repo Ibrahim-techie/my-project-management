@@ -42,8 +42,11 @@ export default function Account() {
         <UserAvatar user={user} className="size-14 [&_[data-slot=avatar-fallback]]:text-base" />
         <div className="min-w-0 flex-1">
           <p className="font-montserrat text-lg font-semibold">{displayName(user)}</p>
-          <p className="truncate text-sm text-muted-foreground">
-            @{user.userName} · {user.email}
+          {/* stacked on phones so the email is not cut down to "i…" */}
+          <p className="text-sm text-muted-foreground sm:truncate">
+            <span className="block sm:inline">@{user.userName}</span>
+            <span className="hidden sm:inline"> · </span>
+            <span className="block [overflow-wrap:anywhere] sm:inline">{user.email}</span>
           </p>
           {user.createdAt && <p className="mt-1 text-xs text-muted-foreground">Member since {shortDate(user.createdAt)}</p>}
         </div>
