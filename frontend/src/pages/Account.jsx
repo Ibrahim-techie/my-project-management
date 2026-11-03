@@ -42,6 +42,12 @@ export default function Account() {
         <UserAvatar user={user} className="size-12 shrink-0 sm:size-14 [&_[data-slot=avatar-fallback]]:text-base" />
         <div className="min-w-0 flex-1">
           <p className="font-montserrat text-lg font-semibold">{displayName(user)}</p>
+          {/* on phones the badge sits under the name instead of squeezing it */}
+          {user.isEmailVerified && (
+            <Chip tone="success" className="mt-1 mb-1.5 sm:hidden">
+              Verified
+            </Chip>
+          )}
           {/* stacked on phones so the email is not cut down to "i…" */}
           <p className="text-sm text-muted-foreground sm:truncate">
             <span className="block sm:inline">@{user.userName}</span>
@@ -50,7 +56,11 @@ export default function Account() {
           </p>
           {user.createdAt && <p className="mt-1 text-xs text-muted-foreground">Member since {shortDate(user.createdAt)}</p>}
         </div>
-        {user.isEmailVerified && <Chip tone="success">Verified</Chip>}
+        {user.isEmailVerified && (
+          <Chip tone="success" className="hidden shrink-0 sm:inline-flex">
+            Verified
+          </Chip>
+        )}
       </section>
 
       <form onSubmit={change} className="surface-card mt-6 space-y-4 p-5">
