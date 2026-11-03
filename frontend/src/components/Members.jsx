@@ -177,6 +177,7 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
                   <div className={ROW_ACTIONS}>
                     <Select
                       aria-label={`Role for ${displayName(m.user)}`}
+                      wrapperClassName="shrink-0"
                       value={m.role}
                       disabled={busy}
                       onChange={(e) =>
