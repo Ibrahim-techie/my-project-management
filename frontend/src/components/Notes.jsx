@@ -120,7 +120,7 @@ export default function Notes({ projectId, canEdit }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-8 hover:bg-danger/10 hover:text-danger"
+                    className="size-10 hover:bg-danger/10 hover:text-danger sm:size-8"
                     aria-label="Delete note"
                     onClick={() => setDeleting(n)}
                   >
