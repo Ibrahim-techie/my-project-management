@@ -108,7 +108,7 @@ export default function Notes({ projectId, canEdit }) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-8"
+                    className="size-10 sm:size-8"
                     aria-label="Edit note"
                     onClick={() => {
                       setEditingId(n._id);
