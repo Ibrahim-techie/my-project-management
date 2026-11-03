@@ -13,6 +13,11 @@ import { ROLE_LABEL, displayName, relativeTime } from "@/lib/format";
 
 const ROLE_OPTIONS = ["member", "project_admin", "admin"];
 
+// Row controls. Below sm they wrap onto their own full-width line, indented
+// under the name (avatar 2rem + gap 0.75rem), so names are not squeezed to "A…".
+const ROW_ACTIONS =
+  "ml-11 flex w-[calc(100%-2.75rem)] items-center justify-between gap-2 sm:ml-0 sm:w-auto sm:justify-start";
+
 export default function Members({ projectId, members, isAdmin, currentUserId, reload }) {
   const toast = useToast();
   const [invitee, setInvitee] = useState(null);
@@ -166,7 +171,7 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
                   <p className="truncate text-xs text-muted-foreground">@{m.user?.userName}</p>
                 </div>
                 {isAdmin && !self ? (
-                  <div className="flex items-center gap-2">
+                  <div className={ROW_ACTIONS}>
                     <Select
                       aria-label={`Role for ${displayName(m.user)}`}
                       value={m.role}
