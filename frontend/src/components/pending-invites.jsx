@@ -79,7 +79,7 @@ export function PendingInvites({ onJoined }) {
                   <span className="font-montserrat font-semibold">{inv.project.name}</span>
                 </p>
                 <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Chip tone="brand">{ROLE_LABEL[inv.role]}</Chip> {relativeTime(inv.updatedAt)}
+                  <Chip tone="brand">{ROLE_LABEL[inv.role]}</Chip> {relativeTime(inv.updatedAt || inv.createdAt)}
                 </p>
               </div>
               <div className="flex gap-2">
