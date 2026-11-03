@@ -23,8 +23,11 @@ export const initials = (user) =>
     .join("")
     .toUpperCase();
 
+// Missing or bad dates render as nothing rather than "Invalid Date"
+const isValidDate = (d) => d != null && !Number.isNaN(new Date(d).getTime());
+
 export const shortDate = (d) =>
-  new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  isValidDate(d) ? new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "";
 
 export const relativeTime = (d) => {
   const diff = (Date.now() - new Date(d).getTime()) / 1000;
