@@ -38,8 +38,8 @@ export default function Account() {
     <div className="mx-auto max-w-xl">
       <PageTitle title="Your account" />
 
-      <section className="surface-card mt-8 flex items-center gap-4 p-5">
-        <UserAvatar user={user} className="size-14 [&_[data-slot=avatar-fallback]]:text-base" />
+      <section className="surface-card mt-8 flex items-center gap-4 p-4 sm:p-5">
+        <UserAvatar user={user} className="size-12 shrink-0 sm:size-14 [&_[data-slot=avatar-fallback]]:text-base" />
         <div className="min-w-0 flex-1">
           <p className="font-montserrat text-lg font-semibold">{displayName(user)}</p>
           {/* stacked on phones so the email is not cut down to "i…" */}
