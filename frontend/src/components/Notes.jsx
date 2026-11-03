@@ -150,7 +150,7 @@ export default function Notes({ projectId, canEdit }) {
                 </div>
               </div>
             ) : (
-              <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap">{n.content}</p>
+              <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{n.content}</p>
             )}
           </article>
         ))
