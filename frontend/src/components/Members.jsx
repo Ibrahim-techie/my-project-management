@@ -16,7 +16,7 @@ const ROLE_OPTIONS = ["member", "project_admin", "admin"];
 // Row controls. Below sm they wrap onto their own full-width line, indented
 // under the name (avatar 2rem + gap 0.75rem), so names are not squeezed to "A…".
 const ROW_ACTIONS =
-  "ml-11 flex w-[calc(100%-2.75rem)] items-center justify-between gap-2 sm:ml-0 sm:w-auto sm:justify-start";
+  "ml-11 flex w-[calc(100%-2.75rem)] flex-wrap items-center justify-between gap-x-2 gap-y-1 sm:ml-0 sm:w-auto sm:justify-start";
 
 export default function Members({ projectId, members, isAdmin, currentUserId, reload }) {
   const toast = useToast();
