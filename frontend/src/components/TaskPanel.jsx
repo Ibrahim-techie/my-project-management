@@ -318,7 +318,7 @@ function Subtasks({ projectId, taskId, canManage }) {
                     type="button"
                     aria-label={`Delete subtask ${s.title}`}
                     onClick={() => run(() => api.delete(`${base}/${s._id}`))}
-                    className="grid size-6 cursor-pointer place-items-center rounded text-muted-foreground opacity-100 transition-opacity hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
+                    className="grid size-9 shrink-0 cursor-pointer sm:size-6 place-items-center rounded text-muted-foreground opacity-100 transition-opacity hover:text-danger sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
                   >
                     <X className="size-3.5" aria-hidden="true" />
                   </button>
