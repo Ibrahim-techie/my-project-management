@@ -8,12 +8,7 @@ import mongoose from "mongoose";
 import SubTask from "../models/subtask.models.js";
 import User from "../models/user.models.js";
 import { emitToProject, emitToUser } from "../socket/index.js";
-import { sendTaskAssignedEmail } from "./email.controller.js";
-
-const taskLinkFor = (projectId) => {
-  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
-  return frontendUrl ? `${frontendUrl}/projects/${projectId}` : null;
-};
+import { sendTaskAssignedEmail, taskLinkFor } from "./email.controller.js";
 
 // Socket ping + email to the new assignee. Skipped when someone assigns a task
 // to themselves. The email runs in the background, so a slow or failing mail
@@ -24,14 +19,18 @@ const notifyAssignee = ({ task, projectId, projectName, assigner }) => {
 
   emitToUser(assigneeId, "task:assigned", { projectId, task });
 
-  const taskLink = taskLinkFor(projectId);
+  const taskLink = taskLinkFor(projectId, task._id);
   if (!taskLink) {
     console.error("[task-email] FRONTEND_URL is not configured, skipping email");
     return;
   }
 
   (async () => {
-    const assignee = await User.findById(assigneeId).select("email userName fullName");
+    const [assignee, subtasks] = await Promise.all([
+      User.findById(assigneeId).select("email userName fullName"),
+      // A reassigned task may already have subtasks; list them with their deadlines
+      SubTask.find({ task: task._id }).select("title status dueDate").sort({ createdAt: 1 }).lean(),
+    ]);
     if (!assignee?.email) return;
     await sendTaskAssignedEmail({
       email: assignee.email,
@@ -41,6 +40,8 @@ const notifyAssignee = ({ task, projectId, projectName, assigner }) => {
       projectName,
       taskTitle: task.title,
       description: task.description,
+      dueDate: task.dueDate,
+      subtasks,
     });
   })().catch((error) => {
     console.error(`[task-email] could not notify assignee of task ${task._id}:`, error.message);

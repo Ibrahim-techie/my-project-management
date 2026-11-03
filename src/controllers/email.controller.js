@@ -9,6 +9,7 @@ import {
   forgotPasswordEmailContentGenerator,
   emailProjectInviteContentGenerator,
   taskAssignedContentGenerator,
+  subtaskAddedContentGenerator,
 } from "../utils/mail.js";
 
 const SENDER_NAME = process.env.EMAIL_SENDER_NAME || "Project Camp";
@@ -132,6 +133,8 @@ const sendTaskAssignedEmail = async ({
   projectName,
   taskTitle,
   description,
+  dueDate,
+  subtasks,
 }) => {
   const mailgenContent = taskAssignedContentGenerator(
     userName,
@@ -139,7 +142,7 @@ const sendTaskAssignedEmail = async ({
     assignerName,
     projectName,
     taskTitle,
-    { description },
+    { description, dueDate, subtasks },
   );
 
   return await sendEmail({
@@ -149,7 +152,47 @@ const sendTaskAssignedEmail = async ({
   });
 };
 
+// 7. Tell a task's assignee a subtask was added to their task
+const sendSubtaskAddedEmail = async ({
+  email,
+  userName,
+  taskLink,
+  adderName,
+  projectName,
+  taskTitle,
+  subtaskTitle,
+  dueDate,
+  taskDueDate,
+}) => {
+  const mailgenContent = subtaskAddedContentGenerator(
+    userName,
+    taskLink,
+    adderName,
+    projectName,
+    taskTitle,
+    subtaskTitle,
+    { dueDate, taskDueDate },
+  );
+
+  return await sendEmail({
+    to: email,
+    subject: mailgenContent.subject,
+    mailgenContent,
+  });
+};
+
+// Deep link that opens the task's panel on the project board
+const taskLinkFor = (projectId, taskId) => {
+  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
+  if (!frontendUrl) return null;
+  return taskId
+    ? `${frontendUrl}/projects/${projectId}?task=${taskId}`
+    : `${frontendUrl}/projects/${projectId}`;
+};
+
 export {
+  taskLinkFor,
+  sendSubtaskAddedEmail,
   sendTaskAssignedEmail,
   transporter,
   sendEmail,

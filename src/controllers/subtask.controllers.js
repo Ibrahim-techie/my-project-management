@@ -6,11 +6,51 @@ import mongoose from "mongoose";
 import Task from "../models/task.models.js";
 import { AvailableTaskStatus, TaskStatusEnum, UserRolesEnum } from "../utils/constants.js";
 import { emitToProject } from "../socket/index.js";
+import Project from "../models/project.models.js";
+import User from "../models/user.models.js";
+import { sendSubtaskAddedEmail, taskLinkFor } from "./email.controller.js";
 
 // Existence check only; nothing here needs the task document itself
 const requireTaskInProject = async (projectId, taskId) => {
   const exists = await Task.exists({ _id: taskId, project: projectId });
   if (!exists) throw new ApiError(404, "Task not found in this project");
+};
+
+// Email the parent task's assignee about a new subtask. Skipped when they
+// added it themselves. Runs in the background so a slow or failing mail
+// provider never delays or fails the request.
+const notifyTaskAssignee = ({ projectId, taskId, subtask, adder }) => {
+  const taskLink = taskLinkFor(projectId, taskId);
+  if (!taskLink) {
+    console.error("[subtask-email] FRONTEND_URL is not configured, skipping email");
+    return;
+  }
+
+  (async () => {
+    const task = await Task.findById(taskId).select("title assignedTo dueDate").lean();
+    const assigneeId = task?.assignedTo?.toString();
+    if (!assigneeId || assigneeId === adder._id.toString()) return;
+
+    const [assignee, project] = await Promise.all([
+      User.findById(assigneeId).select("email userName fullName").lean(),
+      Project.findById(projectId).select("name").lean(),
+    ]);
+    if (!assignee?.email) return;
+
+    await sendSubtaskAddedEmail({
+      email: assignee.email,
+      userName: assignee.fullName || assignee.userName,
+      taskLink,
+      adderName: adder.fullName || adder.userName,
+      projectName: project?.name,
+      taskTitle: task.title,
+      subtaskTitle: subtask.title,
+      dueDate: subtask.dueDate,
+      taskDueDate: task.dueDate,
+    });
+  })().catch((error) => {
+    console.error(`[subtask-email] could not notify assignee of subtask ${subtask._id}:`, error.message);
+  });
 };
 
 // Create subtask
@@ -28,6 +68,7 @@ const createSubTask = asynchandler(async (req, res) => {
   });
 
   emitToProject(projectId, "subtask:created", { projectId, taskId, subtask });
+  notifyTaskAssignee({ projectId, taskId, subtask, adder: req.user });
 
   return res
     .status(201)
