@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { createServer } from "http";
 import connectDB from "./db/connectDB.js";
 import { initSocket } from "./socket/index.js";
+import { startDeadlineReminders } from "./jobs/deadline-reminders.js";
 dotenv.config({
   path: "./.env",
 });
@@ -17,6 +18,7 @@ connectDB()
     httpServer.listen(PORT, () => {
       console.log(`Server is running on: http://localhost:${PORT}`);
     });
+    startDeadlineReminders();
   })
   .catch((err) => {
     console.error("Error starting the server:", err);

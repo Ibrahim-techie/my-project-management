@@ -10,6 +10,7 @@ import {
   emailProjectInviteContentGenerator,
   taskAssignedContentGenerator,
   subtaskAddedContentGenerator,
+  deadlineReminderContentGenerator,
 } from "../utils/mail.js";
 
 const SENDER_NAME = process.env.EMAIL_SENDER_NAME || "Project Camp";
@@ -59,10 +60,11 @@ const sendWithBrevo = async ({ to, subject, html, text }) => {
 };
 
 // 2. Reusable email-sending function
-const sendEmail = async ({ to, subject, mailgenContent }) => {
+// `text` overrides the generated plain-text version when given
+const sendEmail = async ({ to, subject, mailgenContent, text: plainText }) => {
   const html = mailGenerator.generate(mailgenContent);
 
-  const text = mailGenerator.generatePlaintext(mailgenContent);
+  const text = plainText || mailGenerator.generatePlaintext(mailgenContent);
 
   if (process.env.BREVO_API_KEY) {
     return await sendWithBrevo({ to, subject, html, text });
@@ -181,6 +183,18 @@ const sendSubtaskAddedEmail = async ({
   });
 };
 
+// 8. Remind someone of their tasks and subtasks due today or tomorrow
+const sendDeadlineReminderEmail = async ({ email, userName, items, link }) => {
+  const mailgenContent = deadlineReminderContentGenerator(userName, items, link);
+
+  return await sendEmail({
+    to: email,
+    subject: mailgenContent.subject,
+    mailgenContent,
+    text: mailgenContent.body.plainText,
+  });
+};
+
 // Deep link that opens the task's panel on the project board
 const taskLinkFor = (projectId, taskId) => {
   const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
@@ -191,6 +205,7 @@ const taskLinkFor = (projectId, taskId) => {
 };
 
 export {
+  sendDeadlineReminderEmail,
   taskLinkFor,
   sendSubtaskAddedEmail,
   sendTaskAssignedEmail,

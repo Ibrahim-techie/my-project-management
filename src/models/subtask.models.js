@@ -27,6 +27,13 @@ const subtaskSchema = new Schema(
       type: Date,
       default: null,
     },
+
+    // The deadline the last reminder email was sent for. Changing the
+    // deadline makes the item eligible for a fresh reminder.
+    reminderSentFor: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

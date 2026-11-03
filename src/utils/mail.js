@@ -483,7 +483,104 @@ const subtaskAddedContentGenerator = (
   };
 };
 
+/**
+ * Deadline reminder email content generator: one digest per person listing
+ * everything of theirs that is due today or tomorrow.
+ *
+ * @param {string} userName - Recipient display name (optional)
+ * @param {Array<{kind: "Task"|"Subtask", title: string, taskTitle?: string,
+ *   projectName?: string, dueDate: Date|string}>} items - Items due soon
+ * @param {string} link - Where the button goes (the task when there is one item)
+ * @param {object} [options] - Optional settings
+ * @param {string} [options.buttonColor] - Hex color for action button
+ * @returns {object} Mailgen content object, with body.plainText listing the items
+ */
+const deadlineReminderContentGenerator = (userName, items, link, options = {}) => {
+  const name = userName || "";
+  const buttonColor = options.buttonColor || "#08B89D";
+  const single = items.length === 1 ? items[0] : null;
+
+  const whenText = (dueDate) => {
+    const full = formatDeadline(dueDate) || "";
+    return full.endsWith("(today)") ? "today" : full.endsWith("(tomorrow)") ? "tomorrow" : `on ${shortDeadline(dueDate)}`;
+  };
+  const describe = (item) =>
+    item.kind === "Subtask"
+      ? `subtask "${item.title}" on "${item.taskTitle}"`
+      : `task "${item.title}"`;
+
+  const subject = single
+    ? `Reminder: "${single.title}" is due ${whenText(single.dueDate)}`
+    : `Reminder: ${items.length} items are due soon`;
+
+  const greeting = name ? `Hi ${name},` : "Hello,";
+  const intro = single
+    ? `Your ${describe(single)}${single.projectName ? ` in "${single.projectName}"` : ""} is due ${whenText(single.dueDate)}.`
+    : `You have ${items.length} items due today or tomorrow.`;
+  const nudge = single
+    ? "If it is already finished, mark it done so the board stays up to date."
+    : "If any are already finished, mark them done so the board stays up to date.";
+
+  const table = {
+    data: items.map((item) => ({
+      Item: item.kind === "Subtask" ? `${item.title} (subtask of ${item.taskTitle})` : item.title,
+      Project: item.projectName || "",
+      Due: formatDeadline(item.dueDate),
+    })),
+  };
+
+  const action = {
+    instructions: single
+      ? "Click the button below to open it in Project Camp."
+      : "Click the button below to see everything assigned to you.",
+    button: {
+      color: buttonColor,
+      text: single ? "View Task" : "Open Project Camp",
+      link,
+    },
+  };
+  const outro = "You are receiving this because these items are assigned to you.";
+  const signature = "Thanks,\nProject Camp Team";
+
+  // Mailgen's plain-text output drops tables, so list the items here
+  const plainText = [
+    greeting,
+    "",
+    intro,
+    "",
+    ...items.map(
+      (item) =>
+        `- ${item.kind === "Subtask" ? `${item.title} (subtask of ${item.taskTitle})` : item.title}` +
+        `${item.projectName ? `, ${item.projectName}` : ""}: due ${formatDeadline(item.dueDate)}`,
+    ),
+    "",
+    nudge,
+    "",
+    single ? "Open the task:" : "Open Project Camp:",
+    link,
+    "",
+    outro,
+    "",
+    signature,
+  ].join("\n");
+
+  return {
+    subject,
+    body: {
+      name,
+      greeting: name ? "Hi" : "Hello",
+      intro: [intro, nudge],
+      table,
+      action,
+      outro,
+      signature: "Thanks",
+      plainText,
+    },
+  };
+};
+
 export {
+  deadlineReminderContentGenerator,
   subtaskAddedContentGenerator,
   mailGenerator,
   emailVerificationContentGenerator,
