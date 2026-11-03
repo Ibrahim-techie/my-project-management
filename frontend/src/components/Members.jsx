@@ -114,7 +114,7 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{displayName(inv.invitedUser)}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    @{inv.invitedUser?.userName} · {ROLE_LABEL[inv.role]} · sent {relativeTime(inv.updatedAt)}
+                    @{inv.invitedUser?.userName} · {ROLE_LABEL[inv.role]} · sent {relativeTime(inv.updatedAt || inv.createdAt)}
                   </p>
                 </div>
                 {inv.expired ? <Chip tone="blocked">Expired</Chip> : <Chip tone="in_progress">Waiting</Chip>}
