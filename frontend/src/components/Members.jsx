@@ -122,6 +122,8 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
                     @{inv.invitedUser?.userName} · {ROLE_LABEL[inv.role]} · sent {relativeTime(inv.updatedAt || inv.createdAt)}
                   </p>
                 </div>
+                {/* On phones the status and actions take their own line under the name */}
+                <div className={ROW_ACTIONS}>
                 {inv.expired ? <Chip tone="blocked">Expired</Chip> : <Chip tone="in_progress">Waiting</Chip>}
                 <div className="flex items-center gap-1">
                   <Button
@@ -146,6 +148,7 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
                   >
                     Cancel
                   </Button>
+                </div>
                 </div>
               </li>
             ))}
