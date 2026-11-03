@@ -169,7 +169,7 @@ function TaskDetails({ projectId, task, canManage, onEdit, onChanged, onDeleted 
       <div>
         <p className="mb-1.5 text-xs text-muted-foreground">Description</p>
         {task.description ? (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{task.description}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{task.description}</p>
         ) : (
           <p className="text-sm text-muted-foreground">No description.</p>
         )}
