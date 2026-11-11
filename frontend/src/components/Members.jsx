@@ -77,7 +77,7 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
     <div className="mx-auto max-w-3xl space-y-6">
       {isAdmin && (
         <form onSubmit={invite} className="surface-card p-4 sm:p-5">
-          <p className="mb-1 flex items-center gap-2 font-montserrat font-semibold">
+          <p className="mb-1 flex items-center gap-2 font-semibold">
             <MailPlus className="size-4 text-accent-foreground" aria-hidden="true" /> Invite a teammate
           </p>
           <p className="mb-4 text-sm text-subtle-foreground">
@@ -101,7 +101,7 @@ export default function Members({ projectId, members, isAdmin, currentUserId, re
             </Button>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Only people with a verified Project Camp account show up. Project admins can manage tasks; admins can also
+            Only people with a verified CAMP account show up. Project admins can manage tasks; admins can also
             manage members and notes.
           </p>
         </form>

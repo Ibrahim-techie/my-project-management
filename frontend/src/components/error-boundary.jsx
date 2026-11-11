@@ -19,7 +19,7 @@ export class ErrorBoundary extends Component {
     return (
       <div className="grid min-h-dvh place-items-center p-6">
         <div className="surface-card max-w-lg space-y-3 p-6">
-          <p className="font-montserrat text-lg font-semibold">Something went wrong on this page</p>
+          <p className="text-lg font-semibold">Something went wrong on this page</p>
           <pre className="overflow-auto rounded-md bg-secondary/60 p-3 text-xs whitespace-pre-wrap text-danger">
             {String(error?.message || error)}
           </pre>
