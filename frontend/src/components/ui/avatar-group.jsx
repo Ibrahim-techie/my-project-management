@@ -17,14 +17,15 @@ function AvatarGroup({
   const shown = people.slice(0, max)
   const rest = people.length - shown.length
   const box = size === 'sm' ? 'size-7 text-[10px]' : 'size-9 text-xs'
+  const text = size === 'sm' ? 'text-[10px]' : 'text-xs'
   return (
     <div
       data-slot="avatar-group"
-      className={cn('flex items-center -space-x-2', className)}>
+      className={cn('flex items-center', size === 'sm' ? '-space-x-1' : '-space-x-1.5', className)}>
       {shown.map((p) => (
-        <Avatar key={p.name} className={cn(box, 'ring-2 ring-background')}>
+        <Avatar key={p.name} className={cn(box, 'ring-2 ring-card')}>
           {p.src && <AvatarImage src={p.src} alt={p.name} />}
-          <AvatarFallback>
+          <AvatarFallback className={text}>
             <span aria-hidden="true">{p.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
             <span className="sr-only">{p.name}</span>
           </AvatarFallback>
@@ -34,7 +35,7 @@ function AvatarGroup({
         <span
           className={cn(
             box,
-            'relative grid place-items-center rounded-full bg-muted font-montserrat font-semibold text-muted-foreground ring-2 ring-background'
+            'relative grid place-items-center rounded-full bg-muted font-semibold text-muted-foreground ring-2 ring-card'
           )}>
           +{rest}
           <span className="sr-only"> more</span>

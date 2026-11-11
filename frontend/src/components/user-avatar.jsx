@@ -9,7 +9,7 @@ export function UserAvatar({ user, className }) {
   return (
     <Avatar className={cn("size-8", className)}>
       {url && !url.includes(PLACEHOLDER) && <AvatarImage src={url} alt="" />}
-      <AvatarFallback className="font-montserrat text-[11px] font-semibold">
+      <AvatarFallback className="text-[11px] font-semibold">
         <span aria-hidden="true">{initials(user)}</span>
         <span className="sr-only">{displayName(user)}</span>
       </AvatarFallback>
