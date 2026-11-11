@@ -81,7 +81,7 @@ function Dialog({
     className="fixed inset-0 z-[100] grid place-items-center p-4"
     role="presentation">
     <div
-      className="absolute inset-0 bg-[#04080e]/70 backdrop-blur-[3px] motion-safe:animate-chai-fade"
+      className="absolute inset-0 bg-slate-900/20 backdrop-blur-[4px] motion-safe:animate-chai-fade dark:bg-black/60"
       onClick={() => !busy && onClose()}
       aria-hidden="true" />
     <div
@@ -93,12 +93,12 @@ function Dialog({
       tabIndex={-1}
       data-slot="dialog"
       className={cn(
-        'relative w-full max-w-md rounded-2xl border border-border bg-elevated shadow-2xl shadow-black/30 p-6 text-card-foreground outline-none motion-safe:animate-chai-pop',
+        'relative w-full max-w-md rounded-3xl border border-card-edge-hover bg-elevated shadow-[0_20px_25px_-5px_rgb(15_23_42/0.1),0_8px_10px_-6px_rgb(15_23_42/0.05)] dark:shadow-black/50 p-6 text-card-foreground outline-none motion-safe:animate-chai-pop',
         className
       )}>
       <h2
         id={titleId}
-        className="font-montserrat text-lg leading-snug font-semibold">
+        className="text-lg leading-snug font-semibold">
         {title}
       </h2>
       {description && (
