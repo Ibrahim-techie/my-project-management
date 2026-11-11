@@ -1,89 +1,54 @@
 @import "tailwindcss";
-@import "@fontsource-variable/manrope";
-@import "@fontsource-variable/montserrat";
-@import "@fontsource-variable/onest";
-@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * CAMP, after the Stitch "Executive Precision" design system: a cool slate
+ * canvas, white cards on hairline borders, a midnight navy for primary
+ * actions, cobalt for anything interactive and emerald for done.
+ */
 @theme inline {
-
-  --font-sans: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
-
-  --font-manrope: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
-
-  --font-montserrat: 'Montserrat Variable', 'Montserrat', ui-sans-serif, system-ui, sans-serif;
-
-  --font-onest: 'Onest Variable', 'Onest', ui-sans-serif, system-ui, sans-serif;
-
-  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
+  --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
-
   --radius-md: calc(var(--radius) - 2px);
-
   --radius-lg: var(--radius);
-
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --radius-3xl: calc(var(--radius) + 6px);
+  --radius-4xl: calc(var(--radius) + 10px);
 
   --animate-chai-spin: chai-spin 4s linear infinite;
-
   --animate-chai-pop: chai-pop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
-
   --animate-chai-fade: chai-fade 0.15s ease;
 
-  --animate-chai-bounce: chai-bounce 1.75s linear infinite;
-
-  --animate-chai-accordion-down: chai-accordion-down 0.25s ease-out;
-
-  --animate-chai-accordion-up: chai-accordion-up 0.2s ease-out;
-
   --color-background: var(--background);
-
   --color-foreground: var(--foreground);
-
   --color-card: var(--card);
-
   --color-card-foreground: var(--card-foreground);
-
   --color-popover: var(--popover);
-
   --color-popover-foreground: var(--popover-foreground);
-
   --color-primary: var(--primary);
-
   --color-primary-foreground: var(--primary-foreground);
-
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
-
   --color-secondary-foreground: var(--secondary-foreground);
-
   --color-muted: var(--muted);
-
   --color-muted-foreground: var(--muted-foreground);
-
   --color-accent: var(--accent);
-
   --color-accent-foreground: var(--accent-foreground);
-
   --color-destructive: var(--destructive);
-
   --color-border: var(--border);
-
   --color-input: var(--input);
-
   --color-ring: var(--ring);
-
   --color-brand: var(--brand);
-
   --color-highlight: var(--highlight);
-
   --color-card-edge: var(--card-edge);
-
   --color-card-edge-hover: var(--card-edge-hover);
-
   --color-card-fill: var(--card-fill);
-
   --color-sidebar: var(--sidebar);
   --color-elevated: var(--elevated);
   --color-input-bg: var(--input-bg);
@@ -103,176 +68,152 @@
   --color-priority-medium: var(--priority-medium);
   --color-priority-low: var(--priority-low);
   --color-danger: var(--danger);
+  --color-warning: var(--warning);
 
-  --radius-2xl: calc(var(--radius) * 1.8);
-
-  --radius-3xl: calc(var(--radius) * 2.2);
-
-  --radius-4xl: calc(var(--radius) * 2.6);
   @keyframes chai-spin {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
     }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
     }
   }
   @keyframes chai-pop {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
     }
-  to {
-    opacity: 1;
-    transform: none;
+    to {
+      opacity: 1;
+      transform: none;
     }
   }
   @keyframes chai-fade {
-  from {
-    opacity: 0;
+    from {
+      opacity: 0;
     }
-  to {
-    opacity: 1;
-    }
-  }
-  @keyframes chai-accordion-down {
-  from {
-    height: 0;
-    opacity: 0;
-    }
-  to {
-    height: var(--radix-accordion-content-height);
-    opacity: 1;
-    }
-  }
-  @keyframes chai-accordion-up {
-  from {
-    height: var(--radix-accordion-content-height);
-    opacity: 1;
-    }
-  to {
-    height: 0;
-    opacity: 0;
+    to {
+      opacity: 1;
     }
   }
   @keyframes chai-drawer-right {
-  from {
-    transform: translateX(100%);
+    from {
+      transform: translateX(100%);
     }
-  to {
-    transform: none;
+    to {
+      transform: none;
     }
   }
   @keyframes chai-drawer-left {
-  from {
-    transform: translateX(-100%);
+    from {
+      transform: translateX(-100%);
     }
-  to {
-    transform: none;
+    to {
+      transform: none;
     }
   }
   @keyframes chai-drawer-bottom {
-  from {
-    transform: translateY(100%);
+    from {
+      transform: translateY(100%);
     }
-  to {
-    transform: none;
-    }
-  }
-  @keyframes chai-bounce {
-  0%, 100% {
-    transform: translateY(-6%);
-    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-    }
-  50% {
-    transform: none;
-    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    to {
+      transform: none;
     }
   }
 }
 
 :root {
-  /* Brand palette, the same in both themes */
-  --brand-mint: #2de8b5;
-  --brand-cyan: #12c2e9;
-  --brand-blue: #0878f9;
-  --brand-deep: #0645d9;
-  --brand-teal: #08b89d;
-  --gradient-brand: linear-gradient(135deg, #2de8b5 0%, #12c2e9 50%, #0878f9 100%);
-  --on-brand: #04121c;
+  /* Accent palette, the same in both themes */
+  --brand-mint: #10b981;
+  --brand-cyan: #2563eb;
+  --brand-blue: #2563eb;
+  --brand-deep: #1d4ed8;
+  --brand-teal: #2563eb;
+  --on-brand: #ffffff;
 
-  --radius: 0.625rem;
+  --radius: 0.375rem;
 
-  /* Light theme: neutral surfaces, darker teal and blue accents for contrast */
-  --background: #f5f8fb;
+  /* Light theme, straight from the Stitch screens */
+  --background: #f8fafc;
   --sidebar: #ffffff;
   --card: #ffffff;
   --elevated: #ffffff;
   --input-bg: #ffffff;
-  --foreground: #0b1420;
+  --foreground: #0f172a;
   --subtle-foreground: #475569;
   --muted-foreground: #64748b;
-  --border: #dbe3ec;
+  --border: #e2e8f0;
 
   --card-foreground: var(--foreground);
   --popover: var(--elevated);
   --popover-foreground: var(--foreground);
-  --primary: #0878f9;
+  --primary: #0f172a;
+  --primary-hover: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #eef3f8;
+  --secondary: #f1f5f9;
   --secondary-foreground: var(--foreground);
-  --muted: #eef3f8;
-  --accent: rgb(8 184 157 / 0.1);
-  --accent-foreground: #057a68;
+  --muted: #f1f5f9;
+  --accent: rgb(37 99 235 / 0.08);
+  --accent-foreground: #1d4ed8;
   --destructive: #dc2626;
   --danger: #dc2626;
-  --input: var(--border);
-  --ring: #0878f9;
-  --brand: #057a68;
-  --highlight: #0866d9;
+  --warning: #b45309;
+  --input: #cbd5e1;
+  --ring: #2563eb;
+  --brand: #2563eb;
+  --highlight: #2563eb;
   --card-edge: var(--border);
-  --card-edge-hover: #bfcbd8;
+  --card-edge-hover: #cbd5e1;
   --card-fill: var(--card);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-pop: 0 4px 6px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.04);
 
   --status-todo: #64748b;
-  --status-progress: #0284c7;
+  --status-progress: #2563eb;
   --status-review: #7c3aed;
-  --status-done: #047857;
-  --status-blocked: #e11d48;
+  --status-done: #059669;
+  --status-blocked: #dc2626;
   --priority-high: #dc2626;
   --priority-medium: #b45309;
   --priority-low: #2563eb;
 }
 
+/* Dark theme: the same system on midnight navy. Primary actions turn cobalt,
+   since a navy button would disappear against a navy canvas. */
 .dark {
-  --background: #080d14;
-  --sidebar: #0b121b;
-  --card: #111c28;
-  --elevated: #172535;
-  --input-bg: #0d1722;
+  --background: #0b1120;
+  --sidebar: #0f172a;
+  --card: #131c2e;
+  --elevated: #1a2438;
+  --input-bg: #0f172a;
   --foreground: #f1f5f9;
-  --subtle-foreground: #94a3b8;
-  --muted-foreground: #64748b;
-  --border: #263747;
+  --subtle-foreground: #a5b4c8;
+  --muted-foreground: #8391a7;
+  --border: #1e293b;
 
-  --primary: #12c2e9;
-  --primary-foreground: var(--on-brand);
-  --secondary: #172535;
-  --muted: #172535;
-  --accent: rgb(45 232 181 / 0.08);
-  --accent-foreground: #2de8b5;
-  --destructive: #fb7185;
-  --danger: #fb7185;
-  --ring: #12c2e9;
-  --brand: #2de8b5;
-  --highlight: #2de8b5;
-  --card-edge-hover: #34495e;
+  --primary: #2563eb;
+  --primary-hover: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1a2438;
+  --muted: #1a2438;
+  --accent: rgb(59 130 246 / 0.14);
+  --accent-foreground: #93c5fd;
+  --destructive: #f87171;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --input: #334155;
+  --ring: #60a5fa;
+  --brand: #60a5fa;
+  --highlight: #60a5fa;
+  --card-edge-hover: #334155;
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 8px 16px -4px rgb(0 0 0 / 0.5);
 
   --status-todo: #94a3b8;
-  --status-progress: #38bdf8;
+  --status-progress: #60a5fa;
   --status-review: #a78bfa;
-  --status-done: #2de8b5;
-  --status-blocked: #fb7185;
+  --status-done: #34d399;
+  --status-blocked: #f87171;
   --priority-high: #f87171;
   --priority-medium: #fbbf24;
   --priority-low: #60a5fa;
@@ -283,60 +224,44 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-manrope antialiased;
+    @apply bg-background font-sans text-foreground antialiased;
+    font-size: 14px;
+    letter-spacing: -0.005em;
   }
-  :has(> [data-brand-backdrop]),
-  :has(> [data-chai-backdrop]) {
-    position: relative;
-    isolation: isolate;
-    overflow-x: clip;
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
   }
   ::selection {
-    background: rgb(18 194 233 / 0.3);
+    background: rgb(37 99 235 / 0.2);
   }
 }
 
-/* The brand gradient, used sparingly: primary buttons, key progress, the highlight phrase */
-@utility bg-brand-gradient {
-  background-image: var(--gradient-brand);
-}
-
-@utility text-brand-gradient {
-  background-image: var(--gradient-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* One emphasised phrase per paragraph */
+/* One emphasised phrase in a lead: just a touch darker and heavier */
 @utility highlight {
-  font-family: var(--font-montserrat);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  background-image: var(--gradient-brand);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 500;
+  color: var(--foreground);
 }
 
-/* The standard surface for cards and panels: a hairline border, frosted over
-   the hexagon backdrop, no glow */
+/* The standard surface for cards and panels: white on a hairline, no blur */
 @utility surface-card {
-  border-radius: calc(var(--radius) + 4px);
+  border-radius: calc(var(--radius) + 2px);
   border: 1px solid var(--border);
-  background: color-mix(in oklab, var(--card) 82%, transparent);
-  backdrop-filter: blur(6px);
-  transition: border-color 250ms, background-color 250ms;
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  transition: border-color 200ms, background-color 200ms, box-shadow 200ms;
   &:hover {
     border-color: var(--card-edge-hover);
   }
 }
 
-/* ChaiUI's signature corners: the main action, and the mirrored secondary beside it */
-@utility btn-asym {
-  border-radius: 0 var(--radius) 0 var(--radius);
-}
-
-@utility btn-asym-mirror {
-  border-radius: var(--radius) 0 var(--radius) 0;
+/* Uppercase section labels: WORKSPACE, OVERDUE, ACTIVE PROJECTS */
+@utility label-caps {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
 }

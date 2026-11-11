@@ -34,7 +34,7 @@ export default function ResetPassword() {
       {!resetToken ? (
         <FormError message="This reset link is missing its token. Request a new one from the sign in page." />
       ) : done ? (
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Your password is updated. <AuthLink to="/login">Sign in</AuthLink> with it now.
         </p>
       ) : (

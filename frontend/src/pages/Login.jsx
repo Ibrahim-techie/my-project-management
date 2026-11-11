@@ -41,15 +41,11 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Welcome back"
-      description={
-        <>
-          Pick up where you left off with <span className="highlight">your team&apos;s projects</span>.
-        </>
-      }
+      title="Welcome back to CAMP"
+      description="Sign in to pick up your team's projects, boards and deadlines."
       below={
         <>
-          New to Project Camp? <AuthLink to="/register">Create an account</AuthLink>
+          Don&apos;t have an account yet? <AuthLink to="/register">Create an account</AuthLink>
         </>
       }
     >
@@ -67,7 +63,7 @@ export default function Login() {
             autoFocus
           />
         </Field>
-        <Field label="Password" aside={<AuthLink to="/forgot-password">Forgot it?</AuthLink>}>
+        <Field label="Password" aside={<AuthLink to="/forgot-password" className="text-xs">Forgot password?</AuthLink>}>
           <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -76,7 +72,7 @@ export default function Login() {
           />
         </Field>
         <SubmitButton busy={busy} busyLabel="Signing in">
-          Sign in
+          Sign in to CAMP
         </SubmitButton>
       </form>
     </AuthShell>

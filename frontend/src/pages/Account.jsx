@@ -41,7 +41,7 @@ export default function Account() {
       <section className="surface-card mt-8 flex items-center gap-4 p-4 sm:p-5">
         <UserAvatar user={user} className="size-12 shrink-0 sm:size-14 [&_[data-slot=avatar-fallback]]:text-base" />
         <div className="min-w-0 flex-1">
-          <p className="font-montserrat text-lg font-semibold">{displayName(user)}</p>
+          <p className="text-lg font-semibold">{displayName(user)}</p>
           {/* on phones the badge sits under the name instead of squeezing it */}
           {user.isEmailVerified && (
             <Chip tone="success" className="mt-1 mb-1.5 sm:hidden">
@@ -64,7 +64,7 @@ export default function Account() {
       </section>
 
       <form onSubmit={change} className="surface-card mt-6 space-y-4 p-5">
-        <h2 className="font-montserrat font-semibold">Change password</h2>
+        <h2 className="font-semibold">Change password</h2>
         <Field label="Current password">
           <PasswordInput value={oldPassword} onChange={(e) => setOld(e.target.value)} autoComplete="current-password" required />
         </Field>

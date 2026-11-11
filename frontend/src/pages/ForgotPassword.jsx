@@ -33,7 +33,7 @@ export default function ForgotPassword() {
       below={<AuthLink to="/login">Back to sign in</AuthLink>}
     >
       {sent ? (
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           If an account exists for <span className="font-medium text-foreground">{email}</span>, a reset link is on
           its way.
         </p>

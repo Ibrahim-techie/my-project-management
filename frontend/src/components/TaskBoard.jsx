@@ -7,8 +7,10 @@ import { useProjectEvents } from "../socket.jsx";
 import TaskPanel from "./TaskPanel.jsx";
 import { UserAvatar } from "@/components/user-avatar";
 import { DueChip } from "@/components/due-date";
+import { StatusDot } from "@/components/task-row";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/icon-button";
 import { SearchField } from "@/components/search-field";
 import { Kbd } from "@/components/ui/kbd";
 import { Segmented } from "@/components/ui/segmented";
@@ -81,15 +83,17 @@ export default function TaskBoard({ projectId, members, canManage }) {
   return (
     <div>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <Segmented label="Whose tasks" options={SCOPES} value={scope} onChange={setScope} className="self-start" />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <SearchField
             label="Search tasks"
-            placeholder="Search tasks"
+            placeholder="Filter tasks…"
             value={query}
             onChange={setQuery}
-            className="flex-1 lg:w-56 lg:flex-none"
+            className="sm:w-64"
           />
+          <Segmented label="Whose tasks" options={SCOPES} value={scope} onChange={setScope} />
+        </div>
+        <div className="flex items-center gap-2">
           {canManage && (
             <Button
               variant="solid"
@@ -98,7 +102,7 @@ export default function TaskBoard({ projectId, members, canManage }) {
               onClick={() => setOpenTask("new")}
             >
               <Plus className="size-4" aria-hidden="true" /> New task
-              <Kbd aria-hidden="true" className="ml-0.5 hidden border-on-brand/20 bg-on-brand/10 text-on-brand/70 lg:inline-flex">
+              <Kbd aria-hidden="true" className="ml-0.5 hidden border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/70 lg:inline-flex">
                 N
               </Kbd>
             </Button>
@@ -121,8 +125,8 @@ export default function TaskBoard({ projectId, members, canManage }) {
               key={col.value}
               aria-label={col.label}
               className={cn(
-                "w-[84%] shrink-0 snap-center rounded-xl border border-dashed border-transparent p-1 transition-colors sm:w-[60%] md:w-auto",
-                dragOver === col.value && "border-brand-teal/60 bg-accent",
+                "w-[84%] shrink-0 snap-center rounded-2xl border border-border bg-secondary/50 p-3 transition-colors sm:w-[60%] md:w-auto",
+                dragOver === col.value && "border-dashed border-highlight/60 bg-accent",
               )}
               onDragOver={(e) => {
                 if (!canManage) return;
@@ -135,30 +139,35 @@ export default function TaskBoard({ projectId, members, canManage }) {
                 move(e.dataTransfer.getData("text/plain"), col.value);
               }}
             >
-              <header className="mb-3 flex items-center justify-between px-1">
-                <h3 className="flex items-center gap-2 text-sm font-medium">
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      "size-2 rounded-full",
-                      col.value === "todo" && "bg-status-todo",
-                      col.value === "in_progress" && "bg-status-progress",
-                      col.value === "done" && "bg-status-done",
-                    )}
-                  />
+              <header className="mb-3 flex items-center justify-between gap-2 px-1">
+                <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
+                  <StatusDot status={col.value} className="size-2.5" />
                   {col.label}
+                  <span className="rounded-full border border-border bg-elevated px-2 py-px font-mono text-[11px] font-medium tracking-normal text-muted-foreground tabular-nums">
+                    {colTasks.length}
+                  </span>
                 </h3>
-                <span className="font-montserrat text-xs text-muted-foreground">{colTasks.length}</span>
+                {canManage && col.value === "todo" && (
+                  <IconButton
+                    variant="ghost"
+                    aria-label="New task"
+                    title="New task"
+                    onClick={() => setOpenTask("new")}
+                    className="size-7"
+                  >
+                    <Plus aria-hidden="true" />
+                  </IconButton>
+                )}
               </header>
 
               <div className="min-h-32 space-y-2.5">
                 {tasks === null ? (
                   <>
-                    <Skeleton className="h-24 rounded-xl" />
-                    <Skeleton className="h-20 rounded-xl" />
+                    <Skeleton className="h-24 rounded-lg" />
+                    <Skeleton className="h-20 rounded-lg" />
                   </>
                 ) : colTasks.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
+                  <p className="rounded-lg border border-dashed border-input px-3 py-6 text-center text-xs text-muted-foreground">
                     {col.value === "done" ? "Finished work lands here" : "No tasks"}
                   </p>
                 ) : (
@@ -199,17 +208,17 @@ function TaskCard({ task, draggable, onOpen }) {
       onDragStart={(e) => e.dataTransfer.setData("text/plain", task._id)}
       onClick={onOpen}
       className={cn(
-        "surface-card block w-full cursor-pointer p-3.5 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "surface-card block w-full cursor-pointer p-3.5 text-left outline-none hover:shadow-[var(--shadow-pop)] focus-visible:ring-[3px] focus-visible:ring-ring/50",
         draggable && "active:cursor-grabbing",
       )}
     >
-      <p className={cn("font-montserrat text-sm leading-snug font-semibold", task.status === "done" && "text-muted-foreground line-through")}>
+      <p className={cn("text-sm leading-snug font-semibold", task.status === "done" && "text-muted-foreground line-through")}>
         {task.title}
       </p>
       {task.description && (
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{task.description}</p>
+        <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-muted-foreground">{task.description}</p>
       )}
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-2.5">
         <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
           {task.attachments?.length > 0 && (
             <span className="inline-flex items-center gap-0.5">

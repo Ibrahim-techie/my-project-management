@@ -1,8 +1,7 @@
-import { Eye, EyeOff } from 'lucide-react'
+import { ArrowRight, BellRing, Eye, EyeOff, KanbanSquare, ShieldCheck } from 'lucide-react'
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
-import { Backdrop } from '@/components/backdrop'
 import { Link } from 'react-router-dom'
 import { Brand } from '@/components/brand'
 import { ThemeSwitcher } from '@/components/theme-switcher'
@@ -10,6 +9,29 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input';
 
+/* What the app actually does, for the panel beside the form */
+const FEATURES = [
+  {
+    icon: KanbanSquare,
+    title: 'Live Kanban boards',
+    body: 'Drag tasks across To do, In progress and Done. Everyone on the project sees changes the moment they happen.',
+  },
+  {
+    icon: BellRing,
+    title: 'Deadlines with reminders',
+    body: 'Give tasks and subtasks a due date, and assignees get an email when it is close.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Roles and invites',
+    body: 'Invite teammates by email as admins, project admins or members, each with the right permissions.',
+  },
+]
+
+/**
+ * The sign-in layout from the Stitch design: the form on the left, a navy
+ * panel with the product's features on the right (from lg up).
+ */
 export function AuthShell({
   title,
   description,
@@ -18,31 +40,57 @@ export function AuthShell({
   homeHref = '/'
 }) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <Backdrop />
-      <header className="flex items-center justify-between px-6 py-5 sm:px-12">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-sidebar px-5 sm:px-8">
         <Brand to={homeHref} />
         <ThemeSwitcher />
       </header>
-      <main
-        className="flex flex-1 items-start justify-center px-6 pt-8 pb-16 sm:items-center sm:pt-0">
-        <div className="w-full max-w-sm">
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">{title}</h1>
-            {description && <p
-              className="mt-2 text-sm text-subtle-foreground sm:text-base">{description}</p>}
+      <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+        <main className="flex flex-col justify-center bg-sidebar px-5 py-10 sm:px-12 lg:px-16 xl:px-24">
+          <div className="mx-auto w-full max-w-md lg:mx-0">
+            <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[34px] sm:leading-[42px]">{title}</h1>
+            {description && <p className="mt-2 text-[15px] text-muted-foreground">{description}</p>}
+            <div className="mt-8">{children}</div>
+            {below && <p className="mt-8 text-sm text-muted-foreground">{below}</p>}
           </div>
-          <div className="surface-card p-6 shadow-xl shadow-black/10 sm:p-8 dark:shadow-black/30">{children}</div>
-          {below && <p className="mt-6 text-center text-sm text-muted-foreground">{below}</p>}
-        </div>
-      </main>
-      <footer
-        className="px-6 py-6 text-center font-montserrat text-[13px] text-muted-foreground">© {new Date().getFullYear()} Project Camp</footer>
+        </main>
+        <aside
+          aria-label="About CAMP"
+          className="relative hidden overflow-hidden bg-[#0f172a] lg:flex lg:flex-col lg:justify-end">
+          <img
+            src="/brand/auth-hero.webp"
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            className="absolute inset-0 size-full object-cover opacity-80" />
+          <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-[#0b1120] via-[#0b1120]/55 to-transparent" />
+          <div className="relative space-y-3 p-10 xl:p-14">
+            <p className="label-caps text-slate-400">Built for project teams</p>
+            {FEATURES.map(({ icon: Icon, title: t, body }) => (
+              <div
+                key={t}
+                className="flex gap-4 rounded-xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-md">
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-[#2563eb]/25 text-blue-200">
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">{t}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-slate-300">{body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
+      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-sidebar px-5 py-4 text-xs text-muted-foreground sm:px-8">
+        <span>© {new Date().getFullYear()} CAMP</span>
+        <span>Your session is encrypted</span>
+      </footer>
     </div>
   );
 }
 
-/** A text link in auth copy: quiet until hovered, then the brand colour. */
+/** A text link in auth copy, in the interactive cobalt. */
 export function AuthLink({
   className,
   ...props
@@ -50,7 +98,7 @@ export function AuthLink({
   return (
     <Link
       className={cn(
-        'font-medium text-foreground underline-offset-4 transition-colors duration-200 hover:text-brand hover:underline focus-visible:underline',
+        'font-medium text-highlight underline-offset-4 transition-colors duration-200 hover:underline focus-visible:underline',
         className
       )}
       {...props} />
@@ -96,8 +144,8 @@ export function SubmitButton({
       type="submit"
       variant="solid"
       size="lg"
-      iconRight={null}
-      className="w-full"
+      iconRight={busy ? null : <ArrowRight className="size-4" />}
+      className="h-11 w-full"
       disabled={busy}
       aria-busy={busy || undefined}>
       {busy ? busyLabel : children}
@@ -172,17 +220,17 @@ export function OAuthButtons({
             key={p}
             type="button"
             onClick={() => onSelect(p)}
-            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-input-bg text-sm font-medium transition-colors duration-150 outline-none hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-gray-800 dark:bg-black/50 dark:hover:bg-gray-900">
+            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-input-bg text-sm font-medium shadow-[var(--shadow-card)] transition-colors duration-150 outline-none hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/50">
             {providerMeta[p].icon}
             {verb} with {providerMeta[p].label}
           </button>
         ))}
       </div>
       <div
-        className="flex items-center gap-3 text-xs text-muted-foreground"
+        className="label-caps flex items-center gap-3"
         aria-hidden="true">
         <span className="h-px flex-1 bg-border" />
-        or with email
+        Or continue with email
         <span className="h-px flex-1 bg-border" />
       </div>
     </div>

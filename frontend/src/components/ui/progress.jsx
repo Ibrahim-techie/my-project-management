@@ -6,9 +6,8 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * How far along something is. The bar is the neutral primary (light grey on
- * dark): DESIGN.md rules out orange progress bars. Give it an aria-label or
- * put a visible label next to it.
+ * How far along something is, as a thin cobalt bar. Give it an aria-label
+ * or put a visible label next to it.
  */
 function Progress({
   value = 0,
@@ -28,7 +27,7 @@ function Progress({
       )}
       {...props}>
       <ProgressPrimitive.Indicator
-        className="h-full rounded-full bg-brand-gradient transition-[width] duration-500 ease-out"
+        className="h-full rounded-full bg-highlight transition-[width] duration-500 ease-out"
         style={{ width: `${pct}%` }} />
     </ProgressPrimitive.Root>
   );

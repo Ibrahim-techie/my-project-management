@@ -8,6 +8,8 @@ import ResetPassword from "./pages/ResetPassword.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Projects from "./pages/Projects.jsx";
 import ProjectDetail from "./pages/ProjectDetail.jsx";
+import MyTasks from "./pages/MyTasks.jsx";
+import Calendar from "./pages/Calendar.jsx";
 import Account from "./pages/Account.jsx";
 import AcceptInvite from "./pages/AcceptInvite.jsx";
 import VerifyEmail from "./pages/VerifyEmail.jsx";
@@ -39,6 +41,8 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:projectId" element={<ProjectDetail />} />
+        <Route path="/my-tasks" element={<MyTasks />} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/account" element={<Account />} />
       </Route>
       <Route path="*" element={<Notfound />} />

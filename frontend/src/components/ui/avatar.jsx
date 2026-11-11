@@ -39,7 +39,8 @@ function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'flex size-full items-center justify-center rounded-full bg-accent font-montserrat text-xs font-semibold text-accent-foreground ring-1 ring-brand-teal/20',
+        // opaque, so faces overlapping in an AvatarGroup don't show through each other
+        'flex size-full items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700 ring-1 ring-blue-100 dark:bg-[#1c2a47] dark:text-blue-200 dark:ring-blue-400/20',
         className
       )}
       {...props} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { FolderKanban } from "lucide-react";
+import { FolderKanban, Plus } from "lucide-react";
 import { api, errMsg, unwrap } from "../api";
 import { EmptyState, PageTitle } from "@/components/page";
 import { ProjectCard } from "./Dashboard.jsx";
@@ -42,32 +42,34 @@ export default function Projects() {
 
   return (
     <div>
-      <PageTitle title="Projects">
-        Everything your team is building, <span className="highlight">in one place</span>.
-      </PageTitle>
-
-      <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{visible.length}</span>{" "}
-            project{visible.length === 1 ? "" : "s"}
-          </p>
-          <span className="hidden h-4 w-px bg-border sm:block" />
-          <Segmented label="Filter projects" options={FILTERS} value={filter} onChange={setFilter} />
-        </div>
-        <div className="flex items-center gap-2">
-          <SearchField
-            label="Search projects"
-            value={query}
-            onChange={setQuery}
-            className="flex-1 lg:w-56 lg:flex-none"
-          />
+      <PageTitle
+        title="Projects"
+        meta={projects ? `${projects.length} project${projects.length === 1 ? "" : "s"}` : null}
+        action={
           <Button variant="solid" aria-keyshortcuts="n" title="New project (N)" onClick={() => setCreating(true)}>
-            New project
-            <Kbd aria-hidden="true" className="ml-0.5 hidden border-on-brand/20 bg-on-brand/10 text-on-brand/70 lg:inline-flex">
+            <Plus aria-hidden="true" /> New project
+            <Kbd aria-hidden="true" className="ml-0.5 hidden border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground/70 lg:inline-flex">
               N
             </Kbd>
           </Button>
+        }
+      >
+        Everything your team is building, <span className="highlight">in one place</span>.
+      </PageTitle>
+
+      <div className="surface-card mt-6 flex flex-col gap-3 p-3 hover:border-border sm:flex-row sm:items-center sm:justify-between">
+        <SearchField
+          label="Search projects"
+          placeholder="Search projects by name or description"
+          value={query}
+          onChange={setQuery}
+          className="flex-1 sm:max-w-sm"
+        />
+        <div className="flex items-center gap-3">
+          <p className="hidden text-sm text-muted-foreground md:block">
+            Showing <span className="font-semibold text-foreground tabular-nums">{visible.length}</span>
+          </p>
+          <Segmented label="Filter projects" options={FILTERS} value={filter} onChange={setFilter} />
         </div>
       </div>
 

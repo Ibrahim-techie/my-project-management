@@ -2,6 +2,10 @@ import crypto from "node:crypto";
 import APIError from "../utils/ApiErrors.js";
 import User from "../models/user.models.js";
 import {
+  appLinkFor,
+  nameOf,
+  sendInBackground,
+  sendPasswordChangedEmail,
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "./email.controller.js";
@@ -45,6 +49,21 @@ const generateAccessAndRefreshTokens = async (userId) => {
 // The emailed link opens the frontend's /verify-email page, which calls the
 // API. It must not start with /api: that prefix is proxied straight to the
 // backend, so a React route there would never render.
+// A security notice after a password change or reset, so an unexpected one
+// is noticed. Sent in the background; the change has already happened.
+const notifyPasswordChanged = (user, { reset }) => {
+  if (!user?.email) return;
+  sendInBackground(`password ${reset ? "reset" : "change"} notice for ${user._id}`, () =>
+    sendPasswordChangedEmail({
+      email: user.email,
+      userName: nameOf(user),
+      reset,
+      when: new Date(),
+      resetLink: appLinkFor("/forgot-password"),
+    }),
+  );
+};
+
 const verificationLinkFor = (token) => {
   const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
   if (!frontendUrl) {
@@ -466,6 +485,7 @@ const resetForgotPassword = asynchandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   disconnectUser(user._id, "password_reset");
+  notifyPasswordChanged(user, { reset: true });
 
   return res
     .status(200)
@@ -500,6 +520,7 @@ const changeOldPassword = asynchandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   disconnectUser(user._id, "password_changed");
+  notifyPasswordChanged(user, { reset: false });
 
   return res
     .status(200)

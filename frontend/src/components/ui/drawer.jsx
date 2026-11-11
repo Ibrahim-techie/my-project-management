@@ -30,18 +30,18 @@ function DrawerContent({
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay
-        className="fixed inset-0 z-[100] bg-[#04080e]/70 backdrop-blur-[3px] motion-safe:data-[state=open]:animate-chai-fade" />
+        className="fixed inset-0 z-[100] bg-slate-900/20 backdrop-blur-[4px] motion-safe:data-[state=open]:animate-chai-fade dark:bg-black/60" />
       <DialogPrimitive.Content
         data-slot="drawer"
         className={cn(
-          'fixed z-[100] flex flex-col gap-4 overflow-y-auto border-border bg-elevated shadow-2xl shadow-black/30 p-6 text-card-foreground outline-none',
+          'fixed z-[100] flex flex-col gap-4 overflow-y-auto border-border bg-elevated shadow-[0_20px_25px_-5px_rgb(15_23_42/0.1)] dark:shadow-black/50 p-6 text-card-foreground outline-none',
           sides[side],
           className
         )}
         {...props}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <DialogPrimitive.Title className="font-montserrat text-lg font-semibold">{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Title className="text-lg font-semibold">{title}</DialogPrimitive.Title>
             {description ? (
               <DialogPrimitive.Description className="mt-1 text-sm text-muted-foreground">{description}</DialogPrimitive.Description>
             ) : (
@@ -50,7 +50,7 @@ function DrawerContent({
           </div>
           <DialogPrimitive.Close
             aria-label="Close"
-            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50">
+            className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50">
             <X className="size-4" aria-hidden="true" />
           </DialogPrimitive.Close>
         </div>

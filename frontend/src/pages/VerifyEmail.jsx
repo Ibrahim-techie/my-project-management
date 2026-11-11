@@ -42,8 +42,8 @@ export default function VerifyEmail() {
   if (state.status === "error") {
     return (
       <AuthShell title="We couldn't verify your email" below={next}>
-        <div className="space-y-3 text-center">
-          <CircleAlert className="mx-auto size-8 text-danger" aria-hidden="true" />
+        <div className="space-y-3">
+          <CircleAlert className="size-8 text-danger" aria-hidden="true" />
           <p className="text-sm text-subtle-foreground">{state.message}.</p>
           <p className="text-sm text-subtle-foreground">
             Each link works once and expires after an hour. If you already verified, you can sign in now.
@@ -57,8 +57,8 @@ export default function VerifyEmail() {
 
   return (
     <AuthShell title="Email verified" below={next}>
-      <div className="space-y-3 text-center">
-        <MailCheck className="mx-auto size-8 text-status-done" aria-hidden="true" />
+      <div className="space-y-3">
+        <MailCheck className="size-8 text-status-done" aria-hidden="true" />
         <p className="text-sm text-subtle-foreground">
           Your account is ready. <span className="highlight">Sign in</span> to start working with your team.
         </p>

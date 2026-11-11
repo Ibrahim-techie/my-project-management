@@ -17,10 +17,10 @@ const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 const DropdownMenuSub = DropdownMenuPrimitive.Sub
 
 const panel =
-  'z-50 min-w-[10rem] overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-elevated p-1.5 text-popover-foreground shadow-lg shadow-black/20 motion-safe:data-[state=open]:animate-chai-fade'
+  'z-50 min-w-[10rem] overflow-x-hidden overflow-y-auto rounded-xl border border-card-edge-hover bg-elevated p-1.5 text-popover-foreground shadow-[var(--shadow-pop)] motion-safe:data-[state=open]:animate-chai-fade'
 
 const item =
-  "relative flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-[15px] outline-none select-none transition-colors duration-150 focus:bg-accent/60 focus:text-brand data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+  "relative flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm outline-none select-none transition-colors duration-150 focus:bg-secondary focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
 
 function DropdownMenuContent({
   className,
@@ -124,7 +124,7 @@ function DropdownMenuSubTrigger({
   return (
     <DropdownMenuPrimitive.SubTrigger
       data-slot="dropdown-menu-sub-trigger"
-      className={cn(item, 'data-[state=open]:text-brand', className)}
+      className={cn(item, 'data-[state=open]:bg-secondary', className)}
       {...props}>
       {children}
       <ChevronRightIcon className="ml-auto" />
