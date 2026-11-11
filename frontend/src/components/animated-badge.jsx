@@ -4,10 +4,9 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * The hero pill (landing/animated-badge.tsx): a 300 by 20 gradient bar turns
- * behind a 1px gap every 4s, so a mint-to-blue glint runs round the border.
- * It fades in and springs from 0.8 to 1. The glint stops for reduced motion.
- * Use one per screen, above the thing it announces.
+ * A status pill that announces what sits below it: a slate pill on a
+ * hairline with a pulsing cobalt dot. It fades in; the pulse stops for
+ * reduced motion. Use one per screen.
  */
 export function AnimatedBadge({
   children,
@@ -16,23 +15,17 @@ export function AnimatedBadge({
   return (
     <motion.span
       className={cn(
-        'relative inline-flex w-fit items-center justify-center overflow-hidden rounded-full p-px',
+        'inline-flex w-fit items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-foreground',
         className
       )}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}>
-      <span
-        aria-hidden="true"
-        className="absolute top-1/2 left-1/2 h-5 w-[300px] rounded-full bg-linear-to-r from-transparent via-brand-mint/70 to-brand-blue motion-safe:animate-chai-spin"
-        style={{ transform: 'translate(-50%, -50%)' }} />
-      <motion.span
-        className="relative z-10 rounded-full bg-elevated px-4 py-2 text-sm font-medium text-foreground"
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.3, delay: 0.2, type: 'spring', stiffness: 200 }}>
-        {children}
-      </motion.span>
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}>
+      <span aria-hidden="true" className="relative flex size-2">
+        <span className="absolute inline-flex size-full rounded-full bg-highlight opacity-60 motion-safe:animate-ping" />
+        <span className="relative inline-flex size-2 rounded-full bg-highlight" />
+      </span>
+      {children}
     </motion.span>
   );
 }
