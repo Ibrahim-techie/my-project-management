@@ -9,6 +9,16 @@ import Task from "../models/task.models.js";
 import SubTask from "../models/subtask.models.js";
 import Note from "../models/note.model.js";
 import ProjectInvite from "../models/projectinvite.models.js";
+import User from "../models/user.models.js";
+import {
+  appLinkFor,
+  nameOf,
+  sendInBackground,
+  sendMemberRemovedEmail,
+  sendMemberRoleChangedEmail,
+  sendProjectDeletedEmail,
+  taskLinkFor,
+} from "./email.controller.js";
 import {
   closeProjectRoom,
   emitToProject,
@@ -119,6 +129,9 @@ const deleteProjectById = asynchandler(async (req, res) => {
     throw new ApiError(404, "project not found");
   }
 
+  // Read the members before their memberships go, to tell them afterwards
+  const memberIds = await ProjectMember.find({ project: project._id }).distinct("user");
+
   // Remove everything that hangs off the project, otherwise leftover
   // memberships keep granting access to its tasks and notes.
   const taskIds = await Task.find({ project: project._id }).distinct("_id");
@@ -131,6 +144,29 @@ const deleteProjectById = asynchandler(async (req, res) => {
   ]);
 
   closeProjectRoom(project._id);
+
+  const others = memberIds.filter((id) => String(id) !== String(req.user._id));
+  if (others.length > 0) {
+    sendInBackground(`project ${project._id} deleted`, async () => {
+      const people = await User.find({ _id: { $in: others } }).select("email userName fullName");
+      // one failed address does not stop the rest
+      const results = await Promise.allSettled(
+        people
+          .filter((p) => p.email)
+          .map((p) =>
+            sendProjectDeletedEmail({
+              email: p.email,
+              userName: nameOf(p),
+              projectName: project.name,
+              deleterName: nameOf(req.user),
+              appLink: appLinkFor("/"),
+            }),
+          ),
+      );
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length) throw new Error(`${failed.length} of ${results.length} emails failed: ${failed[0].reason?.message}`);
+    });
+  }
 
   return res
     .status(200)
@@ -167,6 +203,9 @@ const updateProjectMemberRoles = asynchandler(async (req, res) => {
   if (!AvailableUserRole.includes(newRole)) {
     throw new ApiError(400, "Invalid ROle");
   }
+  // only an actual change is worth an email
+  const before = await ProjectMember.findOne({ project: projectId, user: userId }).select("role").lean();
+
   const projectMember = await ProjectMember.findOneAndUpdate(
     {
       project: new mongoose.Types.ObjectId(projectId),
@@ -183,6 +222,24 @@ const updateProjectMemberRoles = asynchandler(async (req, res) => {
   const payload = { projectId, userId, role: projectMember.role };
   emitToProject(projectId, "member:role-updated", payload);
   emitToUser(userId, "member:role-updated", payload);
+
+  if (before?.role !== projectMember.role && String(userId) !== String(req.user._id)) {
+    sendInBackground(`role change for ${userId} in ${projectId}`, async () => {
+      const [member, project] = await Promise.all([
+        User.findById(userId).select("email userName fullName"),
+        Project.findById(projectId).select("name"),
+      ]);
+      if (!member?.email || !project) return;
+      await sendMemberRoleChangedEmail({
+        email: member.email,
+        userName: nameOf(member),
+        projectName: project.name,
+        role: projectMember.role,
+        changerName: nameOf(req.user),
+        projectLink: taskLinkFor(projectId),
+      });
+    });
+  }
 
   return res.json(new ApiResponse(200, projectMember));
 });
@@ -202,6 +259,23 @@ const deleteProjectMember = asynchandler(async (req, res) => {
   // Pull their sockets out of the room first so they miss this and later events
   removeUserFromProject(projectId, userId);
   emitToProject(projectId, "member:removed", { projectId, userId });
+
+  if (String(userId) !== String(req.user._id)) {
+    sendInBackground(`removal of ${userId} from ${projectId}`, async () => {
+      const [member, project] = await Promise.all([
+        User.findById(userId).select("email userName fullName"),
+        Project.findById(projectId).select("name"),
+      ]);
+      if (!member?.email || !project) return;
+      await sendMemberRemovedEmail({
+        email: member.email,
+        userName: nameOf(member),
+        projectName: project.name,
+        removerName: nameOf(req.user),
+        appLink: appLinkFor("/"),
+      });
+    });
+  }
 
   return res
     .status(200)

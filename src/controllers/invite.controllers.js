@@ -6,7 +6,13 @@ import Project from "../models/project.models.js";
 import ProjectMember from "../models/projectmember.models.js";
 import User from "../models/user.models.js";
 import ProjectInvite, { InviteStatusEnum, hashInviteToken } from "../models/projectinvite.models.js";
-import { sendProjectInviteEmail } from "./email.controller.js";
+import {
+  nameOf,
+  sendInBackground,
+  sendInviteRespondedEmail,
+  sendProjectInviteEmail,
+  taskLinkFor,
+} from "./email.controller.js";
 import { emitToProject } from "../socket/index.js";
 
 const PUBLIC_USER_FIELDS = "userName fullName avatar";
@@ -217,6 +223,26 @@ const respond = async (invite, user, accept) => {
   invite.status = accept ? InviteStatusEnum.ACCEPTED : InviteStatusEnum.DECLINED;
   invite.respondedAt = new Date();
   await invite.save();
+
+  // Let whoever sent the invite know the answer
+  if (String(invite.invitedBy) !== String(user._id)) {
+    sendInBackground(`invite ${invite._id} response`, async () => {
+      const [inviter, project] = await Promise.all([
+        User.findById(invite.invitedBy).select("email userName fullName"),
+        Project.findById(invite.project).select("name"),
+      ]);
+      if (!inviter?.email || !project) return;
+      await sendInviteRespondedEmail({
+        email: inviter.email,
+        userName: nameOf(inviter),
+        inviteeName: nameOf(user),
+        projectName: project.name,
+        accepted: accept,
+        role: invite.role,
+        projectLink: taskLinkFor(project._id),
+      });
+    });
+  }
 
   if (projectId) {
     emitToProject(projectId, "member:joined", {
