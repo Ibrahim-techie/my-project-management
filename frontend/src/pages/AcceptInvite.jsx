@@ -56,8 +56,8 @@ export default function AcceptInvite() {
     const wrongAccount = problem.reason === "wrong_account";
     return (
       <AuthShell title={wrongAccount ? "This invite is for someone else" : "This invite can't be used"} below={below}>
-        <div className="space-y-4 text-center">
-          <CircleAlert className="mx-auto size-8 text-danger" aria-hidden="true" />
+        <div className="space-y-4">
+          <CircleAlert className="size-8 text-danger" aria-hidden="true" />
           <p className="text-sm text-subtle-foreground">{problem.message}.</p>
           {wrongAccount && (
             <>
@@ -84,8 +84,8 @@ export default function AcceptInvite() {
   if (declined) {
     return (
       <AuthShell title="Invite declined" below={below}>
-        <div className="space-y-3 text-center">
-          <MailX className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
+        <div className="space-y-3">
+          <MailX className="size-8 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-subtle-foreground">
             You won&apos;t be added to {invite.project.name}. A project admin can invite you again if you change your mind.
           </p>
@@ -100,7 +100,7 @@ export default function AcceptInvite() {
       description={
         invite ? (
           <>
-            Join <span className="highlight">{invite.project.name}</span> on Project Camp.
+            Join <span className="highlight">{invite.project.name}</span> on CAMP.
           </>
         ) : null
       }
@@ -137,7 +137,7 @@ export default function AcceptInvite() {
               {busy === "decline" ? "Declining" : "Decline"}
             </Button>
           </div>
-          <p className="text-center text-xs text-muted-foreground">Valid until {shortDate(invite.expiresAt)}</p>
+          <p className="text-xs text-muted-foreground">Valid until {shortDate(invite.expiresAt)}</p>
         </div>
       )}
     </AuthShell>
