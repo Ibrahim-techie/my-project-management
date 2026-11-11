@@ -4,6 +4,7 @@ import { createServer } from "http";
 import connectDB from "./db/connectDB.js";
 import { initSocket } from "./socket/index.js";
 import { startDeadlineReminders } from "./jobs/deadline-reminders.js";
+import { verifyMailTransport } from "./controllers/email.controller.js";
 dotenv.config({
   path: "./.env",
 });
@@ -19,6 +20,8 @@ connectDB()
       console.log(`Server is running on: http://localhost:${PORT}`);
     });
     startDeadlineReminders();
+    // logs whether email works; never blocks startup
+    verifyMailTransport();
   })
   .catch((err) => {
     console.error("Error starting the server:", err);

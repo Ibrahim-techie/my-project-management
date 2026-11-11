@@ -13,7 +13,7 @@ import {
   deadlineReminderContentGenerator,
 } from "../utils/mail.js";
 
-const SENDER_NAME = process.env.EMAIL_SENDER_NAME || "Project Camp";
+const SENDER_NAME = process.env.EMAIL_SENDER_NAME || process.env.APP_NAME || "CAMP";
 const SENDER_EMAIL = process.env.EMAIL_SENDER_ADDRESS || process.env.SMTP_USER;
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
 
@@ -59,12 +59,25 @@ const sendWithBrevo = async ({ to, subject, html, text }) => {
   return body;
 };
 
+// Fails fast with a clear message instead of an opaque transport error
+const assertMailConfigured = () => {
+  if (!process.env.BREVO_API_KEY && !(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)) {
+    throw new Error("Email is not configured: set BREVO_API_KEY, or SMTP_HOST, SMTP_USER and SMTP_PASS");
+  }
+  if (!SENDER_EMAIL) {
+    throw new Error("Email is not configured: set EMAIL_SENDER_ADDRESS (or SMTP_USER)");
+  }
+};
+
 // 2. Reusable email-sending function
-// `text` overrides the generated plain-text version when given
+// `text` overrides the plain-text version. Otherwise the generator's own
+// plainText is used (Mailgen's drops tables and extra lines), then Mailgen's.
 const sendEmail = async ({ to, subject, mailgenContent, text: plainText }) => {
+  assertMailConfigured();
   const html = mailGenerator.generate(mailgenContent);
 
-  const text = plainText || mailGenerator.generatePlaintext(mailgenContent);
+  const text =
+    plainText || mailgenContent.body?.plainText || mailGenerator.generatePlaintext(mailgenContent);
 
   if (process.env.BREVO_API_KEY) {
     return await sendWithBrevo({ to, subject, html, text });
@@ -83,28 +96,32 @@ const sendEmail = async ({ to, subject, mailgenContent, text: plainText }) => {
 
 // 3. Send email verification email
 const sendVerificationEmail = async ({ email, userName, verificationLink }) => {
+  // the link lives as long as generateEmailVerificationToken allows
   const mailgenContent = emailVerificationContentGenerator(
     userName,
     verificationLink,
+    { expiry: "1 hour" },
   );
 
   return await sendEmail({
     to: email,
-    subject: "Verify Your Email Address",
+    subject: mailgenContent.subject,
     mailgenContent,
   });
 };
 
 // 4. Send forgot password email
 const sendPasswordResetEmail = async ({ email, userName, resetLink }) => {
+  // the link lives as long as generateForgotPasswordToken allows
   const mailgenContent = forgotPasswordEmailContentGenerator(
     userName,
     resetLink,
+    { expiry: "1 hour" },
   );
 
   return await sendEmail({
     to: email,
-    subject: "Reset Your Password",
+    subject: mailgenContent.subject,
     mailgenContent,
   });
 };
@@ -116,7 +133,7 @@ const sendProjectInviteEmail = async ({ email, userName, inviteLink, inviterName
     inviteLink,
     inviterName,
     projectName,
-    { expiry: "7 days", buttonColor: "#08B89D" },
+    { expiry: "7 days" },
   );
 
   return await sendEmail({
@@ -195,6 +212,27 @@ const sendDeadlineReminderEmail = async ({ email, userName, items, link }) => {
   });
 };
 
+/**
+ * Checks at startup that mail can go out, and logs the result, so a bad
+ * password or blocked port shows up in the logs instead of on the first
+ * signup. Never throws: the server runs either way.
+ */
+const verifyMailTransport = async () => {
+  try {
+    assertMailConfigured();
+    if (process.env.BREVO_API_KEY) {
+      console.log(`[mail] sending through the Brevo API as ${SENDER_EMAIL}`);
+      return true;
+    }
+    await transporter.verify();
+    console.log(`[mail] SMTP ready: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT} as ${SENDER_EMAIL}`);
+    return true;
+  } catch (error) {
+    console.error(`[mail] email is NOT working: ${error.message}`);
+    return false;
+  }
+};
+
 // Deep link that opens the task's panel on the project board
 const taskLinkFor = (projectId, taskId) => {
   const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
@@ -205,6 +243,7 @@ const taskLinkFor = (projectId, taskId) => {
 };
 
 export {
+  verifyMailTransport,
   sendDeadlineReminderEmail,
   taskLinkFor,
   sendSubtaskAddedEmail,

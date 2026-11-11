@@ -1,13 +1,23 @@
 import Mailgen from "mailgen";
 
-const mailGenerator = new Mailgen({
-  theme: "salted",
-  product: {
-    name: "Project Camp",
-    link: "https://frontend-neon-beta-90.vercel.app",
-    logo: "https://yourcompany.com/logo.png",
-  },
-});
+const APP_NAME = process.env.APP_NAME || "CAMP";
+// The navy of the app's primary buttons
+const BUTTON_COLOR = "#0f172a";
+
+const appUrl = () => process.env.FRONTEND_URL?.replace(/\/+$/, "") || "http://localhost:5173";
+
+// Built per email rather than at import time, so FRONTEND_URL is read after
+// .env has loaded. No logo image: the header shows the product name instead.
+const createMailGenerator = () =>
+  new Mailgen({
+    theme: "salted",
+    product: { name: APP_NAME, link: appUrl() },
+  });
+
+const mailGenerator = {
+  generate: (content) => createMailGenerator().generate(content),
+  generatePlaintext: (content) => createMailGenerator().generatePlaintext(content),
+};
 
 /**
  * Build a Mailgen-friendly email payload with sensible defaults and plain-text fallback.
@@ -25,13 +35,14 @@ const emailVerificationContentGenerator = (
   options = {},
 ) => {
   const name = userName || "";
-  const buttonColor = options.buttonColor || "#2250bc";
-  const fromName = options.fromName || "Project Camp Support";
-  const subject = "Verify your email for Project Camp";
+  const buttonColor = options.buttonColor || BUTTON_COLOR;
+  const expiryNote = options.expiry ? `This link expires in ${options.expiry}.` : "";
+  const fromName = options.fromName || `${APP_NAME} Support`;
+  const subject = `Verify your email for ${APP_NAME}`;
 
   const greeting = name ? `Hi ${name},` : "Hello,";
   const intro =
-    "Welcome to Project Camp. Please verify your email to get started.";
+    `Welcome to ${APP_NAME}. Please verify your email to get started.`;
   const details =
     "Verifying your email helps secure your account and enables full access to features.";
   const action = {
@@ -45,7 +56,7 @@ const emailVerificationContentGenerator = (
   const outro =
     "If you did not create an account, no further action is required.";
   const support = `If you need help, reply to this email or contact ${fromName}.`;
-  const signature = "Thanks,\nTask Manager Team";
+  const signature = `Thanks,\n${APP_NAME} Team`;
 
   const plainText = [
     greeting,
@@ -57,6 +68,8 @@ const emailVerificationContentGenerator = (
     "Verify your email:",
     verificationLink,
     "",
+    expiryNote,
+    "",
     outro,
     "",
     support,
@@ -66,17 +79,15 @@ const emailVerificationContentGenerator = (
     .filter(Boolean)
     .join("\n");
 
+  // Mailgen renders only intro, action and outro, so the extra lines go there
   return {
     subject,
     body: {
       name,
       greeting: name ? "Hi" : "Hello",
-      intro,
-      details,
-      message: action.instructions,
+      intro: [intro, details],
       action,
-      outro,
-      support,
+      outro: [expiryNote, outro, support].filter(Boolean),
       signature: "Thanks",
       plainText,
     },
@@ -100,12 +111,12 @@ const forgotPasswordEmailContentGenerator = (
   options = {},
 ) => {
   const name = userName || "";
-  const buttonColor = options.buttonColor || "#bc6f22";
+  const buttonColor = options.buttonColor || BUTTON_COLOR;
   const expiryNote = options.expiry
     ? `This link expires in ${options.expiry}.`
     : "";
-  const fromName = options.fromName || "Project Camp Support";
-  const subject = "Reset your Project Camp password";
+  const fromName = options.fromName || `${APP_NAME} Support`;
+  const subject = `Reset your ${APP_NAME} password`;
 
   const greeting = name ? `Hi ${name},` : "Hello,";
   const intro = "We received a request to reset your password.";
@@ -122,7 +133,7 @@ const forgotPasswordEmailContentGenerator = (
   const outro =
     "If you did not request a password reset, you can safely ignore this message.";
   const support = `If you have questions, reply to this email or contact ${fromName}.`;
-  const signature = "Thanks,\nProject Camp Team";
+  const signature = `Thanks,\n${APP_NAME} Team`;
 
   const plainText = [
     greeting,
@@ -150,12 +161,9 @@ const forgotPasswordEmailContentGenerator = (
     body: {
       name,
       greeting: name ? "Hi" : "Hello",
-      intro,
-      details,
-      message: action.instructions,
+      intro: [intro, details],
       action,
-      outro,
-      support,
+      outro: [expiryNote, outro, support].filter(Boolean),
       signature: "Thanks",
       plainText,
     },
@@ -185,7 +193,7 @@ const emailProjectInviteContentGenerator = (
   const name = userName || "";
   const inviter = admin || "A team member";
   const project = projectName || "a project";
-  const buttonColor = options.buttonColor || "#bc6f22";
+  const buttonColor = options.buttonColor || BUTTON_COLOR;
   const expiryNote = options.expiry
     ? `This invitation will expire in ${options.expiry}.`
     : "";
@@ -208,7 +216,7 @@ const emailProjectInviteContentGenerator = (
   const outro =
     "If you do not want to join, you can ignore this message and no action is required.";
   const support = `If you have questions, reply to this email or contact ${fromName}.`;
-  const signature = "Thanks,\nProject Camp Team";
+  const signature = `Thanks,\n${APP_NAME} Team`;
 
   const plainText = [
     greeting,
@@ -236,12 +244,9 @@ const emailProjectInviteContentGenerator = (
     body: {
       name,
       greeting: name ? "Hi" : "Hello",
-      intro,
-      details,
-      message: action.instructions,
+      intro: [intro, details],
       action,
-      outro,
-      support,
+      outro: [expiryNote, outro, support].filter(Boolean),
       signature: "Thanks",
       plainText,
     },
@@ -307,7 +312,7 @@ const taskAssignedContentGenerator = (
   const assigner = assignerName || "A project admin";
   const project = projectName || "your project";
   const title = taskTitle || "a task";
-  const buttonColor = options.buttonColor || "#08B89D";
+  const buttonColor = options.buttonColor || BUTTON_COLOR;
   const deadline = formatDeadline(options.dueDate);
   const subtasks = options.subtasks || [];
   const subject = deadline
@@ -341,7 +346,7 @@ const taskAssignedContentGenerator = (
         }
       : undefined;
   const action = {
-    instructions: "Click the button below to open the task in Project Camp.",
+    instructions: `Click the button below to open the task in ${APP_NAME}.`,
     button: {
       color: buttonColor,
       text: "View Task",
@@ -350,7 +355,7 @@ const taskAssignedContentGenerator = (
   };
   const outro =
     "You are receiving this because you are a member of this project.";
-  const signature = "Thanks,\nProject Camp Team";
+  const signature = `Thanks,\n${APP_NAME} Team`;
 
   const subtaskLines = subtasks.map(
     (s) => `- ${s.title}${s.dueDate ? ` (due ${shortDeadline(s.dueDate)})` : ""}`,
@@ -420,7 +425,7 @@ const subtaskAddedContentGenerator = (
   const project = projectName || "your project";
   const task = taskTitle || "your task";
   const title = subtaskTitle || "a subtask";
-  const buttonColor = options.buttonColor || "#08B89D";
+  const buttonColor = options.buttonColor || BUTTON_COLOR;
   const deadline = formatDeadline(options.dueDate);
   const taskDeadline = formatDeadline(options.taskDueDate);
   const subject = deadline
@@ -441,7 +446,7 @@ const subtaskAddedContentGenerator = (
     ...(taskDeadline && { "Task deadline": taskDeadline }),
   };
   const action = {
-    instructions: "Click the button below to open the task in Project Camp.",
+    instructions: `Click the button below to open the task in ${APP_NAME}.`,
     button: {
       color: buttonColor,
       text: "View Task",
@@ -449,7 +454,7 @@ const subtaskAddedContentGenerator = (
     },
   };
   const outro = "You are receiving this because the task is assigned to you.";
-  const signature = "Thanks,\nProject Camp Team";
+  const signature = `Thanks,\n${APP_NAME} Team`;
 
   const plainText = [
     greeting,
@@ -497,7 +502,7 @@ const subtaskAddedContentGenerator = (
  */
 const deadlineReminderContentGenerator = (userName, items, link, options = {}) => {
   const name = userName || "";
-  const buttonColor = options.buttonColor || "#08B89D";
+  const buttonColor = options.buttonColor || BUTTON_COLOR;
   const single = items.length === 1 ? items[0] : null;
 
   const whenText = (dueDate) => {
@@ -531,16 +536,16 @@ const deadlineReminderContentGenerator = (userName, items, link, options = {}) =
 
   const action = {
     instructions: single
-      ? "Click the button below to open it in Project Camp."
+      ? `Click the button below to open it in ${APP_NAME}.`
       : "Click the button below to see everything assigned to you.",
     button: {
       color: buttonColor,
-      text: single ? "View Task" : "Open Project Camp",
+      text: single ? "View Task" : `Open ${APP_NAME}`,
       link,
     },
   };
   const outro = "You are receiving this because these items are assigned to you.";
-  const signature = "Thanks,\nProject Camp Team";
+  const signature = `Thanks,\n${APP_NAME} Team`;
 
   // Mailgen's plain-text output drops tables, so list the items here
   const plainText = [
@@ -556,7 +561,7 @@ const deadlineReminderContentGenerator = (userName, items, link, options = {}) =
     "",
     nudge,
     "",
-    single ? "Open the task:" : "Open Project Camp:",
+    single ? "Open the task:" : `Open ${APP_NAME}:`,
     link,
     "",
     outro,
