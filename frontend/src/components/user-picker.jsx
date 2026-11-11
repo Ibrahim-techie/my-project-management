@@ -68,7 +68,7 @@ export function UserPicker({ projectId, value, onChange, id, ...aria }) {
 
   if (value) {
     return (
-      <div className="flex h-10 items-center gap-2.5 rounded-lg border border-brand-teal/40 bg-accent px-2.5">
+      <div className="flex h-10 items-center gap-2.5 rounded-lg border border-highlight/40 bg-accent px-2.5">
         <UserAvatar user={value} className="size-6" />
         <span className="min-w-0 flex-1 truncate text-sm">
           <span className="font-medium">{displayName(value)}</span>{" "}

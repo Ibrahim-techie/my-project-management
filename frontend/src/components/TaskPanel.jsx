@@ -221,7 +221,7 @@ function TaskDetails({ projectId, task, canManage, onEdit, onChanged, onDeleted 
             aria-describedby="delete-task-body"
             className="mt-auto rounded-xl border border-danger/35 bg-danger/8 p-4"
           >
-            <p id="delete-task-title" className="flex items-center gap-2 font-montserrat font-semibold">
+            <p id="delete-task-title" className="flex items-center gap-2 font-semibold">
               <TriangleAlert className="size-4 text-danger" aria-hidden="true" /> Delete this task?
             </p>
             <p id="delete-task-body" className="mt-1 text-sm text-subtle-foreground">
@@ -293,7 +293,7 @@ function Subtasks({ projectId, taskId, canManage }) {
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs text-muted-foreground">Subtasks</p>
         {total > 0 && (
-          <p className="font-montserrat text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {done}/{total}
           </p>
         )}
@@ -469,7 +469,7 @@ function TaskForm({ projectId, task, members, onCancel, onSaved }) {
 
       <div>
         <p className="mb-1.5 text-sm font-medium">Images</p>
-        <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed border-border px-4 py-6 text-center transition-colors hover:border-brand-teal/50 hover:bg-accent">
+        <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed border-border px-4 py-6 text-center transition-colors hover:border-highlight/50 hover:bg-accent">
           <ImagePlus className="size-5 text-muted-foreground" aria-hidden="true" />
           <span className="text-sm">Add images</span>
           <span className="text-xs text-muted-foreground">JPG, PNG or WebP, up to 5 MB each</span>
