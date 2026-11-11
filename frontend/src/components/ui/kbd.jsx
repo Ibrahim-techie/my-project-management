@@ -12,7 +12,7 @@ function Kbd({
       data-slot="kbd"
       className={cn(
         // shortcut hints mean nothing on a touch screen without a keyboard
-        'inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-input-bg px-1 font-mono text-[11px] text-muted-foreground pointer-coarse:hidden',
+        'inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-secondary px-1 font-mono text-[10px] font-medium text-muted-foreground pointer-coarse:hidden',
         className
       )}
       {...props} />

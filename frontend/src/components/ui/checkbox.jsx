@@ -6,7 +6,7 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-/** shadcn's checkbox. Checked means done, so it takes the mint completed colour. */
+/** shadcn's checkbox, cobalt when checked. */
 function Checkbox({
   className,
   ...props
@@ -15,7 +15,7 @@ function Checkbox({
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        'peer size-4 shrink-0 cursor-pointer rounded-[5px] border border-card-edge-hover bg-input-bg transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-transparent data-[state=checked]:bg-brand-teal data-[state=checked]:text-white dark:data-[state=checked]:bg-brand-mint dark:data-[state=checked]:text-on-brand',
+        'peer size-4 shrink-0 cursor-pointer rounded-[4px] border border-input bg-input-bg transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-transparent data-[state=checked]:bg-highlight data-[state=checked]:text-white dark:data-[state=checked]:bg-primary',
         className
       )}
       {...props}>

@@ -8,12 +8,12 @@ import { cn } from '@/lib/utils'
  * status palette as text on a faint tint of the same colour.
  */
 const chipVariants = cva(
-  'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap',
+  'inline-flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap tabular-nums',
   {
     variants: {
       tone: {
         default: 'border-border bg-secondary/60 text-subtle-foreground',
-        brand: 'border-brand-teal/30 bg-brand-teal/10 text-accent-foreground',
+        brand: 'border-highlight/25 bg-accent text-accent-foreground',
         todo: 'border-status-todo/30 bg-status-todo/10 text-status-todo',
         in_progress: 'border-status-progress/30 bg-status-progress/10 text-status-progress',
         review: 'border-status-review/30 bg-status-review/10 text-status-review',

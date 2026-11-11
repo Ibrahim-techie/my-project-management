@@ -6,13 +6,13 @@ import { cn } from '@/lib/utils'
 
 /**
  * A message in the flow of the page: a notice, a warning, a failure. Like
- * every status in ChaiUI it is a thin coloured outline and coloured text on
- * the page background, never a filled block. Tones use the status palette at low opacity.
+ * every status in CAMP it is a thin coloured outline and coloured text on
+ * the page background. Tones use the status palette at low opacity.
  */
-const alertVariants = cva('relative flex gap-3 rounded-xl border px-4 py-3 text-sm', {
+const alertVariants = cva('relative flex gap-3 rounded-lg border px-4 py-3 text-sm', {
   variants: {
     tone: {
-      info: 'border-border bg-card text-foreground [&>svg]:text-brand-cyan',
+      info: 'border-border bg-card text-foreground [&>svg]:text-highlight',
       success: 'border-status-done/30 bg-status-done/8 text-foreground [&>svg]:text-status-done',
       warning: 'border-priority-medium/35 bg-priority-medium/8 text-foreground [&>svg]:text-priority-medium',
       danger: 'border-danger/35 bg-danger/8 text-foreground [&>svg]:text-danger',
@@ -39,7 +39,7 @@ function Alert({
       {...props}>
       <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <div className="min-w-0 space-y-0.5">
-        {title && <p className="font-montserrat font-semibold">{title}</p>}
+        {title && <p className="font-semibold">{title}</p>}
         {children && <div className="leading-relaxed opacity-90">{children}</div>}
       </div>
     </div>

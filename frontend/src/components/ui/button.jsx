@@ -5,12 +5,12 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * Project Camp buttons.
+ * CAMP buttons.
  *
- * - `solid` is the primary action (Create, Save): the brand gradient with
- *   dark text and ChaiUI's asymmetric corners. Keep it to one or two per view.
- * - `soft` is the default secondary action: a dark surface with a hairline.
- * - `outline` is transparent with the mirrored corners; `ghost` has no chrome.
+ * - `solid` is the primary action (Create, Save): midnight navy that turns
+ *   cobalt on hover. Keep it to one or two per view.
+ * - `soft` is the default secondary action: a white surface on a hairline.
+ * - `outline` is transparent on a hairline; `ghost` has no chrome.
  * - `muted` is the quiet "View all" style link button.
  * - `danger` is for the confirm step of a destructive action.
  */
@@ -19,12 +19,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        solid: 'btn-asym bg-brand-gradient font-semibold text-on-brand hover:brightness-110 active:brightness-95',
-        soft: 'rounded-lg border border-border bg-elevated text-foreground hover:border-card-edge-hover hover:bg-secondary',
-        outline: 'btn-asym-mirror border border-border bg-transparent text-foreground hover:bg-secondary',
+        solid: 'rounded-lg bg-primary text-primary-foreground shadow-[var(--shadow-card)] hover:bg-primary-hover',
+        soft: 'rounded-lg border border-border bg-elevated text-foreground shadow-[var(--shadow-card)] hover:border-card-edge-hover hover:bg-secondary',
+        outline: 'rounded-lg border border-border bg-transparent text-foreground hover:bg-secondary',
         muted: 'rounded-lg bg-secondary text-subtle-foreground hover:text-foreground',
         ghost: 'rounded-lg text-subtle-foreground hover:bg-secondary hover:text-foreground',
-        danger: 'rounded-lg bg-red-600 font-semibold text-white hover:bg-red-600/90 dark:bg-rose-500 dark:text-white dark:hover:bg-rose-500/90',
+        danger: 'rounded-lg bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-500/90',
       },
       size: {
         sm: 'h-8 gap-1.5 px-3',
