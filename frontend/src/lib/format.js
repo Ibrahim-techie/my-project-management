@@ -39,6 +39,9 @@ export const relativeTime = (d) => {
   return shortDate(d);
 };
 
+/** Where a task opens: its project board with the task panel up. */
+export const taskHref = (t) => `/projects/${t.projectId || t.project}?task=${t._id}`;
+
 /** The assignee comes back populated on lists and as an array from the task aggregation. */
 export const assigneeOf = (task) => {
   const a = Array.isArray(task?.assignedTo) ? task.assignedTo[0] : task?.assignedTo;
@@ -56,8 +59,15 @@ export const assigneeId = (task) => {
  */
 export const dueDateValue = (d) => (isValidDate(d) ? new Date(d).toISOString().slice(0, 10) : "");
 
-const localDayKey = (date = new Date()) =>
+/** A local calendar day as "YYYY-MM-DD", comparable with dueDateValue. */
+export const localDayKey = (date = new Date()) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+/** Whole days from today to a deadline (negative when past), or null without one. */
+export const daysUntilDue = (d) => {
+  const day = dueDateValue(d);
+  return day ? Math.round((Date.parse(day) - Date.parse(localDayKey())) / 86400000) : null;
+};
 
 /**
  * How a deadline reads next to a task: its label, how urgent it is
