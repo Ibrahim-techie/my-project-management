@@ -8,7 +8,40 @@ import mongoose from "mongoose";
 import SubTask from "../models/subtask.models.js";
 import User from "../models/user.models.js";
 import { emitToProject, emitToUser } from "../socket/index.js";
-import { sendTaskAssignedEmail, taskLinkFor } from "./email.controller.js";
+import {
+  nameOf,
+  sendInBackground,
+  sendTaskAssignedEmail,
+  sendTaskDeadlineChangedEmail,
+  taskLinkFor,
+} from "./email.controller.js";
+
+// Deadlines are whole days stored as midnight UTC; "" when there is none
+const dayOf = (date) => (date ? new Date(date).toISOString().slice(0, 10) : "");
+
+// Email the assignee when someone else sets, moves or clears their deadline
+const notifyDeadlineChanged = ({ task, projectId, previousDueDate, changer }) => {
+  const assigneeId = task.assignedTo?.toString();
+  if (!assigneeId || assigneeId === changer._id.toString()) return;
+
+  sendInBackground(`deadline change on task ${task._id}`, async () => {
+    const [assignee, project] = await Promise.all([
+      User.findById(assigneeId).select("email userName fullName"),
+      Project.findById(projectId).select("name").lean(),
+    ]);
+    if (!assignee?.email) return;
+    await sendTaskDeadlineChangedEmail({
+      email: assignee.email,
+      userName: nameOf(assignee),
+      taskTitle: task.title,
+      projectName: project?.name,
+      changerName: nameOf(changer),
+      previousDueDate,
+      dueDate: task.dueDate,
+      taskLink: taskLinkFor(projectId, task._id),
+    });
+  });
+};
 
 // Socket ping + email to the new assignee. Skipped when someone assigns a task
 // to themselves. The email runs in the background, so a slow or failing mail
@@ -243,22 +276,22 @@ const updateTask = asynchandler(async (req, res) => {
     }
   }
 
-  // The previous assignee only matters when the assignee may change
-  let previousAssignee = null;
-  if (assignedTo) {
-    const previous = await Task.findOne(
+  // The previous assignee and deadline only matter when either may change
+  let previous = null;
+  if (assignedTo || dueDate !== undefined) {
+    previous = await Task.findOne(
       {
         project: new mongoose.Types.ObjectId(projectId),
         _id: new mongoose.Types.ObjectId(taskId),
       },
-      { assignedTo: 1 },
+      { assignedTo: 1, dueDate: 1 },
     ).lean();
 
     if (!previous) {
       throw new ApiError(400, "No Task Found");
     }
-    previousAssignee = previous.assignedTo?.toString();
   }
+  const previousAssignee = assignedTo ? previous.assignedTo?.toString() : null;
 
   const task = await Task.findOneAndUpdate(
     {
@@ -285,8 +318,11 @@ const updateTask = asynchandler(async (req, res) => {
 
   emitToProject(projectId, "task:updated", task);
   if (assignedTo && task.assignedTo?.toString() !== previousAssignee) {
+    // a new assignee's email already carries the deadline
     const project = await Project.findById(projectId).select("name").lean();
     notifyAssignee({ task, projectId, projectName: project?.name, assigner: req.user });
+  } else if (dueDate !== undefined && dayOf(previous.dueDate) !== dayOf(task.dueDate)) {
+    notifyDeadlineChanged({ task, projectId, previousDueDate: previous.dueDate, changer: req.user });
   }
 
   res.status(200).json(new ApiResponse(200, "Task updated successfully", task));
