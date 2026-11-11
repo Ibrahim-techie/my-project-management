@@ -584,7 +584,254 @@ const deadlineReminderContentGenerator = (userName, items, link, options = {}) =
   };
 };
 
+// ---------- short notices ----------
+
+const ROLE_TEXT = { admin: "Admin", project_admin: "Project admin", member: "Member" };
+const ROLE_DETAIL = {
+  admin: "Admins manage the project, its members, its notes and its tasks.",
+  project_admin: "Project admins create, edit and assign tasks and subtasks.",
+  member: "Members follow the project's tasks and notes and work on what is assigned to them.",
+};
+
+/** "12 November 2026, 14:05 UTC" */
+const formatMoment = (date = new Date()) =>
+  `${date.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  })} UTC`;
+
+/**
+ * Shared shape for short notification emails: a greeting, a few lines, an
+ * optional facts list and button, and a matching plain-text version. The
+ * button is left out when there is no link (FRONTEND_URL not configured).
+ */
+const noticeContent = ({ userName, subject, lines, dictionary, button, outro }) => {
+  const name = userName || "";
+  const greeting = name ? `Hi ${name},` : "Hello,";
+  const signature = `Thanks,\n${APP_NAME} Team`;
+  const withButton = Boolean(button?.link);
+
+  const plainText = [
+    greeting,
+    "",
+    ...lines,
+    "",
+    ...(dictionary ? Object.entries(dictionary).map(([k, v]) => `${k}: ${v}`) : []),
+    "",
+    ...(withButton ? [`${button.text}:`, button.link] : []),
+    "",
+    outro,
+    "",
+    signature,
+  ]
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+
+  return {
+    subject,
+    body: {
+      name,
+      greeting: name ? "Hi" : "Hello",
+      intro: lines,
+      ...(dictionary && { dictionary }),
+      ...(withButton && {
+        action: {
+          instructions: button.instructions || "",
+          button: { color: BUTTON_COLOR, text: button.text, link: button.link },
+        },
+      }),
+      outro,
+      signature: "Thanks",
+      plainText,
+    },
+  };
+};
+
+/**
+ * Security notice after a password change or reset
+ *
+ * @param {string} userName - Recipient display name (optional)
+ * @param {object} options
+ * @param {boolean} [options.reset] - true when it was reset with an emailed link
+ * @param {string} [options.resetLink] - Where to go if it was not them
+ * @param {Date} [options.when] - When it happened
+ */
+const passwordChangedContentGenerator = (userName, { reset = false, resetLink, when } = {}) =>
+  noticeContent({
+    userName,
+    subject: `Your ${APP_NAME} password was changed`,
+    lines: [
+      `The password for your ${APP_NAME} account was ${
+        reset ? "reset with an emailed link" : "changed from your account settings"
+      } on ${formatMoment(when)}.`,
+      "You were signed out everywhere, so sign in again with the new password.",
+    ],
+    button: {
+      instructions: "If you did not make this change, reset your password now.",
+      text: "Reset Password",
+      link: resetLink,
+    },
+    outro: "If this was you, there is nothing else to do.",
+  });
+
+/**
+ * Tells whoever sent an invite that it was accepted or declined
+ *
+ * @param {string} userName - Inviter display name (optional)
+ * @param {object} options
+ * @param {string} options.inviteeName - Who answered
+ * @param {string} options.projectName - Project name
+ * @param {boolean} options.accepted - Accepted or declined
+ * @param {string} [options.role] - Role the invite granted
+ * @param {string} [options.projectLink] - URL of the project
+ */
+const inviteRespondedContentGenerator = (
+  userName,
+  { inviteeName, projectName, accepted, role, projectLink } = {},
+) => {
+  const who = inviteeName || "Someone you invited";
+  const project = projectName || "your project";
+  return noticeContent({
+    userName,
+    subject: accepted ? `${who} joined ${project}` : `${who} declined your invite to ${project}`,
+    lines: accepted
+      ? [
+          `${who} accepted your invite and joined "${project}"${role ? ` as ${ROLE_TEXT[role] || role}` : ""}.`,
+          "You can assign them tasks now.",
+        ]
+      : [
+          `${who} declined your invite to "${project}".`,
+          "If that was a mistake, you can send a new invite from the project's Members tab.",
+        ],
+    button: { text: "Open Project", link: projectLink },
+    outro: "You are receiving this because you sent the invite.",
+  });
+};
+
+/**
+ * Tells a member their role in a project changed
+ *
+ * @param {string} userName - Member display name (optional)
+ * @param {object} options
+ * @param {string} options.projectName - Project name
+ * @param {string} options.role - The new role
+ * @param {string} [options.changerName] - Who changed it
+ * @param {string} [options.projectLink] - URL of the project
+ */
+const memberRoleChangedContentGenerator = (userName, { projectName, role, changerName, projectLink } = {}) => {
+  const project = projectName || "a project";
+  const roleText = ROLE_TEXT[role] || role;
+  return noticeContent({
+    userName,
+    subject: `Your role in ${project} is now ${roleText}`,
+    lines: [
+      `${changerName || "A project admin"} changed your role in "${project}" to ${roleText}.`,
+      ROLE_DETAIL[role] || "",
+    ].filter(Boolean),
+    button: { text: "Open Project", link: projectLink },
+    outro: "You are receiving this because you are a member of this project.",
+  });
+};
+
+/**
+ * Tells someone they were removed from a project
+ *
+ * @param {string} userName - Former member display name (optional)
+ * @param {object} options
+ * @param {string} options.projectName - Project name
+ * @param {string} [options.removerName] - Who removed them
+ * @param {string} [options.appLink] - URL of the app
+ */
+const memberRemovedContentGenerator = (userName, { projectName, removerName, appLink } = {}) => {
+  const project = projectName || "a project";
+  return noticeContent({
+    userName,
+    subject: `You were removed from ${project}`,
+    lines: [
+      `${removerName || "A project admin"} removed you from "${project}".`,
+      "You no longer have access to its tasks and notes. If you think this was a mistake, ask a project admin to invite you again.",
+    ],
+    button: { text: `Open ${APP_NAME}`, link: appLink },
+    outro: "You are receiving this because you were a member of this project.",
+  });
+};
+
+/**
+ * Tells the members of a project that it was deleted
+ *
+ * @param {string} userName - Member display name (optional)
+ * @param {object} options
+ * @param {string} options.projectName - Project name
+ * @param {string} [options.deleterName] - Who deleted it
+ * @param {string} [options.appLink] - URL of the app
+ */
+const projectDeletedContentGenerator = (userName, { projectName, deleterName, appLink } = {}) => {
+  const project = projectName || "A project";
+  return noticeContent({
+    userName,
+    subject: `${project} was deleted`,
+    lines: [
+      `${deleterName || "A project admin"} deleted the project "${project}".`,
+      "Its tasks, subtasks and notes were deleted with it, so nothing is waiting for you there.",
+    ],
+    button: { text: `Open ${APP_NAME}`, link: appLink },
+    outro: "You are receiving this because you were a member of this project.",
+  });
+};
+
+/**
+ * Tells a task's assignee that someone set, moved or removed its deadline
+ *
+ * @param {string} userName - Assignee display name (optional)
+ * @param {object} options
+ * @param {string} options.taskTitle - Task title
+ * @param {string} options.projectName - Project name
+ * @param {string} [options.changerName] - Who changed it
+ * @param {Date|string|null} [options.previousDueDate] - Deadline before
+ * @param {Date|string|null} [options.dueDate] - Deadline now
+ * @param {string} [options.taskLink] - URL that opens the task
+ */
+const taskDeadlineChangedContentGenerator = (
+  userName,
+  { taskTitle, projectName, changerName, previousDueDate, dueDate, taskLink } = {},
+) => {
+  const title = taskTitle || "your task";
+  const project = projectName || "your project";
+  const changer = changerName || "A project admin";
+  const before = formatDeadline(previousDueDate);
+  const after = formatDeadline(dueDate);
+  return noticeContent({
+    userName,
+    subject: after ? `New deadline for ${title}: ${shortDeadline(dueDate)}` : `Deadline removed from ${title}`,
+    lines: after
+      ? [
+          `${changer} ${before ? "moved" : "set"} the deadline of your task "${title}" in "${project}".`,
+          `It is now due ${after}.`,
+        ]
+      : [`${changer} removed the deadline from your task "${title}" in "${project}".`],
+    dictionary: {
+      Project: project,
+      Task: title,
+      "Changed by": changer,
+      "Previous deadline": before || "None",
+      "New deadline": after || "None",
+    },
+    button: { text: "View Task", link: taskLink },
+    outro: "You are receiving this because the task is assigned to you.",
+  });
+};
+
 export {
+  passwordChangedContentGenerator,
+  inviteRespondedContentGenerator,
+  memberRoleChangedContentGenerator,
+  memberRemovedContentGenerator,
+  projectDeletedContentGenerator,
+  taskDeadlineChangedContentGenerator,
   deadlineReminderContentGenerator,
   subtaskAddedContentGenerator,
   mailGenerator,

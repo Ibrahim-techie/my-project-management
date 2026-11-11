@@ -11,6 +11,12 @@ import {
   taskAssignedContentGenerator,
   subtaskAddedContentGenerator,
   deadlineReminderContentGenerator,
+  passwordChangedContentGenerator,
+  inviteRespondedContentGenerator,
+  memberRoleChangedContentGenerator,
+  memberRemovedContentGenerator,
+  projectDeletedContentGenerator,
+  taskDeadlineChangedContentGenerator,
 } from "../utils/mail.js";
 
 const SENDER_NAME = process.env.EMAIL_SENDER_NAME || process.env.APP_NAME || "CAMP";
@@ -212,6 +218,32 @@ const sendDeadlineReminderEmail = async ({ email, userName, items, link }) => {
   });
 };
 
+// 9. Notices. Each takes the recipient and the generator's options.
+const sendNotice = (generator) => async ({ email, userName, ...options }) => {
+  const mailgenContent = generator(userName, options);
+  return await sendEmail({ to: email, subject: mailgenContent.subject, mailgenContent });
+};
+
+const sendPasswordChangedEmail = sendNotice(passwordChangedContentGenerator);
+const sendInviteRespondedEmail = sendNotice(inviteRespondedContentGenerator);
+const sendMemberRoleChangedEmail = sendNotice(memberRoleChangedContentGenerator);
+const sendMemberRemovedEmail = sendNotice(memberRemovedContentGenerator);
+const sendProjectDeletedEmail = sendNotice(projectDeletedContentGenerator);
+const sendTaskDeadlineChangedEmail = sendNotice(taskDeadlineChangedContentGenerator);
+
+/**
+ * Runs an email send without holding up the request: a slow or failing mail
+ * provider never delays or fails what the user did. Failures are logged.
+ */
+const sendInBackground = (label, send) => {
+  Promise.resolve()
+    .then(send)
+    .catch((error) => console.error(`[mail] ${label}:`, error.message));
+};
+
+/** The display name used in emails, as elsewhere: full name, else username */
+const nameOf = (user) => user?.fullName || user?.userName || "";
+
 /**
  * Checks at startup that mail can go out, and logs the result, so a bad
  * password or blocked port shows up in the logs instead of on the first
@@ -242,7 +274,22 @@ const taskLinkFor = (projectId, taskId) => {
     : `${frontendUrl}/projects/${projectId}`;
 };
 
+/** A page of the frontend, or null when FRONTEND_URL is not configured */
+const appLinkFor = (path = "/") => {
+  const frontendUrl = process.env.FRONTEND_URL?.replace(/\/+$/, "");
+  return frontendUrl ? `${frontendUrl}${path}` : null;
+};
+
 export {
+  sendInBackground,
+  nameOf,
+  appLinkFor,
+  sendPasswordChangedEmail,
+  sendInviteRespondedEmail,
+  sendMemberRoleChangedEmail,
+  sendMemberRemovedEmail,
+  sendProjectDeletedEmail,
+  sendTaskDeadlineChangedEmail,
   verifyMailTransport,
   sendDeadlineReminderEmail,
   taskLinkFor,
