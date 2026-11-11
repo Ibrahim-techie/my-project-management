@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { ChevronLeft, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, KanbanSquare, NotebookText, Pencil, Trash2, Users } from "lucide-react";
 import { api, errMsg, ROLES, unwrap } from "../api";
 import { useAuth } from "../auth.jsx";
 import { useProjectEvents } from "../socket.jsx";
@@ -104,31 +104,39 @@ export default function ProjectDetail() {
 
   return (
     <div>
-      <Link
-        to="/projects"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-brand"
-      >
-        <ChevronLeft className="size-4" aria-hidden="true" /> Projects
-      </Link>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
+        <Link to="/projects" className="text-muted-foreground transition-colors hover:text-highlight">
+          Projects
+        </Link>
+        <ChevronRight className="size-3.5 text-muted-foreground" aria-hidden="true" />
+        <span aria-current="page" className="flex min-w-0 items-center gap-1.5 font-medium">
+          <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-highlight" />
+          <span className="truncate">{project.name}</span>
+        </span>
+      </nav>
 
       <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-medium tracking-tight sm:text-3xl">{project.name}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[32px] sm:leading-10">{project.name}</h1>
             {role && <Chip tone={isAdmin ? "brand" : "default"}>{ROLE_LABEL[role]}</Chip>}
           </div>
           {project.description && (
-            <p className="mt-2 max-w-2xl text-subtle-foreground">{project.description}</p>
+            <p className="mt-1.5 max-w-2xl text-[15px] text-muted-foreground">{project.description}</p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <AvatarGroup
-            size="sm"
-            max={4}
-            people={members.map((m) => ({ name: displayName(m.user) }))}
-          />
+        <div className="surface-card flex shrink-0 flex-wrap items-center gap-4 px-4 py-3 hover:border-border">
+          <div>
+            <p className="label-caps">Team</p>
+            <div className="mt-1 flex items-center gap-2">
+              <AvatarGroup size="sm" max={4} people={members.map((m) => ({ name: displayName(m.user) }))} />
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {members.length} member{members.length === 1 ? "" : "s"}
+              </span>
+            </div>
+          </div>
           {isAdmin && (
-            <>
+            <div className="flex items-center gap-1 sm:border-l sm:border-border sm:pl-3">
               <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
                 <Pencil aria-hidden="true" /> Edit
               </Button>
@@ -140,7 +148,7 @@ export default function ProjectDetail() {
               >
                 <Trash2 aria-hidden="true" /> Delete
               </Button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -153,9 +161,18 @@ export default function ProjectDetail() {
 
       <Tabs defaultValue="board" className="mt-6">
         <TabsList aria-label="Project sections">
-          <TabsTrigger value="board">Board</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
+          <TabsTrigger value="board">
+            <KanbanSquare aria-hidden="true" /> Board
+          </TabsTrigger>
+          <TabsTrigger value="notes">
+            <NotebookText aria-hidden="true" /> Notes
+          </TabsTrigger>
+          <TabsTrigger value="members">
+            <Users aria-hidden="true" /> Members
+            <span className="rounded-full border border-border bg-secondary px-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+              {members.length}
+            </span>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="board" className="mt-6">
           <TaskBoard projectId={projectId} members={members} canManage={canManageTasks} />
