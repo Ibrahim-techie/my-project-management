@@ -1,6 +1,6 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
 
-const STORAGE_KEY = 'chaiui-theme'
+const STORAGE_KEY = 'camp-theme'
 
 const ThemeContext = createContext(null)
 
@@ -15,12 +15,12 @@ function readStored(storageKey, fallback) {
 }
 
 /**
- * Dark by default, matching the brand. The choice is a `dark` class on
- * <html>, kept in localStorage.
+ * Light by default, matching the Stitch design. The choice is a `dark` class
+ * on <html>, kept in localStorage.
  */
 export function ThemeProvider({
   children,
-  defaultTheme = 'dark',
+  defaultTheme = 'light',
   storageKey = STORAGE_KEY
 }) {
   // The server cannot see localStorage, so start from the default and read
@@ -66,7 +66,7 @@ export function useTheme() {
  * script can go straight into index.html.
  */
 export function ThemeScript({
-  defaultTheme = 'dark',
+  defaultTheme = 'light',
   storageKey = STORAGE_KEY
 }) {
   const code = `(function(){try{var t=localStorage.getItem(${JSON.stringify(storageKey)});if(t!=='light'&&t!=='dark')t=${JSON.stringify(defaultTheme)};document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.style.colorScheme=t}catch(e){}})()`
