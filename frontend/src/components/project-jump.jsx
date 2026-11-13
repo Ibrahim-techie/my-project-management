@@ -71,7 +71,7 @@ export function ProjectJump({ projects, className }) {
         aria-controls={listId}
         aria-activedescendant={open && results[active] ? `${listId}-${active}` : undefined}
         aria-keyshortcuts={isMac ? "Meta+K" : "Control+K"}
-        placeholder="Jump to a project…"
+        placeholder="Search projects"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
