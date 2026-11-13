@@ -281,7 +281,7 @@ function StatCard({ index, label, icon: Icon, tint, value, badge, progress }) {
       className="surface-card flex flex-col gap-3 p-4 sm:p-5"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="label-caps pt-1.5">{label}</span>
+        <span className="section-label pt-1.5">{label}</span>
         <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg border", TINTS[tint])}>
           <Icon className="size-4" aria-hidden="true" />
         </span>

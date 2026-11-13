@@ -179,7 +179,7 @@ function SideNav({ projects, className }) {
   return (
     <nav aria-label="Main" className={cn("flex min-h-0 flex-col gap-6", className)}>
       <div>
-        <p className="label-caps px-2.5 pb-1.5">Workspace</p>
+        <p className="section-label px-2.5 pb-1.5">Workspace</p>
         <ul className="space-y-0.5">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <li key={to}>
@@ -192,7 +192,7 @@ function SideNav({ projects, className }) {
       </div>
 
       <div className="min-h-0 overflow-y-auto">
-        <p className="label-caps px-2.5 pb-1.5">Your projects</p>
+        <p className="section-label px-2.5 pb-1.5">Your projects</p>
         {projects === null ? null : projects.length === 0 ? (
           <p className="px-2.5 text-xs text-muted-foreground">No projects yet</p>
         ) : (

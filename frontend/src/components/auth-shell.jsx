@@ -65,7 +65,7 @@ export function AuthShell({
             className="absolute inset-0 size-full object-cover opacity-80" />
           <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-[#0b1120] via-[#0b1120]/55 to-transparent" />
           <div className="relative space-y-3 p-10 xl:p-14">
-            <p className="label-caps text-slate-400">Built for project teams</p>
+            <p className="section-label text-slate-400">Built for project teams</p>
             {FEATURES.map(({ icon: Icon, title: t, body }) => (
               <div
                 key={t}
@@ -227,7 +227,7 @@ export function OAuthButtons({
         ))}
       </div>
       <div
-        className="label-caps flex items-center gap-3"
+        className="section-label flex items-center gap-3"
         aria-hidden="true">
         <span className="h-px flex-1 bg-border" />
         Or continue with email

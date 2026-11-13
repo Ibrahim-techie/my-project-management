@@ -138,7 +138,7 @@ export default function Calendar() {
         <section aria-label={monthLabel} className="surface-card hidden p-3 hover:border-border md:block">
           <div className="grid grid-cols-7 gap-1.5 pb-1.5">
             {WEEKDAYS.map((d) => (
-              <p key={d} className="label-caps rounded-md bg-secondary py-1.5 text-center">
+              <p key={d} className="section-label rounded-md bg-secondary py-1.5 text-center">
                 {d}
               </p>
             ))}
@@ -217,7 +217,7 @@ export default function Calendar() {
               .filter((c) => c.inMonth && byDay[c.key]?.length)
               .map(({ date, key }) => (
                 <div key={key}>
-                  <p className={cn("label-caps mb-1.5 px-1", key === todayKey && "text-highlight")}>
+                  <p className={cn("section-label mb-1.5 px-1", key === todayKey && "text-highlight")}>
                     {date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
                     {key === todayKey && " · Today"}
                   </p>

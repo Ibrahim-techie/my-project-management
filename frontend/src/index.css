@@ -267,12 +267,10 @@
   }
 }
 
-/* Uppercase section labels: WORKSPACE, OVERDUE, ACTIVE PROJECTS */
-@utility label-caps {
-  font-size: 11px;
+/* Quiet section labels in sentence case: Workspace, Your projects, Team */
+@utility section-label {
+  font-size: 12px;
   line-height: 16px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 500;
   color: var(--muted-foreground);
 }
