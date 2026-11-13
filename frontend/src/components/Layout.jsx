@@ -69,16 +69,16 @@ export default function Layout() {
   return (
     <div className="min-h-dvh bg-background">
       <div className="md:grid md:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="sticky top-0 hidden h-dvh flex-col border-r border-border bg-sidebar px-3 py-4 md:flex">
-          <Brand className="px-2" />
-          <SideNav projects={projects} className="mt-7 flex-1" />
+        <aside className="sticky top-0 hidden h-dvh flex-col border-r border-border bg-sidebar px-3 pt-3 pb-3 md:flex">
+          <Brand className="h-8 px-2" />
+          <SideNav projects={projects} className="mt-8 flex-1" />
           <UserCard user={user} onAccount={() => navigate("/account")} onSignOut={signOut} />
         </aside>
 
         <div className="min-w-0">
           {/* Desktop top bar */}
-          <header className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-4 border-b border-border bg-background/85 px-6 backdrop-blur-xl md:flex lg:px-8">
-            <ProjectJump projects={projects} className="w-full max-w-md" />
+          <header className="sticky top-0 z-40 hidden h-14 items-center justify-between gap-4 border-b border-border bg-background/90 px-6 backdrop-blur-md md:flex lg:px-8">
+            <ProjectJump projects={projects} className="w-full max-w-sm" />
             <div className="flex items-center gap-2">
               <ThemeSwitcher />
               <Button variant="solid" size="sm" asChild>
@@ -91,7 +91,7 @@ export default function Layout() {
 
           {/* Phone header */}
           <header className="sticky top-0 z-40 border-b border-border bg-sidebar/90 backdrop-blur-md md:hidden">
-            <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+            <div className="flex h-14 items-center justify-between gap-3 px-4">
               <Brand />
               <div className="flex items-center gap-1">
                 <ThemeSwitcher />
@@ -124,7 +124,7 @@ export default function Layout() {
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-[1440px] px-4 pt-5 pb-16 sm:px-6 md:pt-6 lg:px-8">
+          <main className="mx-auto w-full max-w-[1440px] px-4 pt-6 pb-16 sm:px-6 md:pt-8 lg:px-8">
             <Outlet context={{ projects, reloadProjects }} />
           </main>
         </div>
@@ -136,16 +136,16 @@ export default function Layout() {
 /** The signed-in person at the foot of the sidebar, with the account menu. */
 function UserCard({ user, onAccount, onSignOut }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-border p-2">
+    <div className="flex items-center gap-3 rounded-xl border border-border p-2">
       <UserAvatar user={user} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium">{displayName(user)}</p>
-        <p className="truncate text-[11px] text-muted-foreground">@{user.userName}</p>
+        <p className="truncate text-[13px] leading-5 font-medium">{displayName(user)}</p>
+        <p className="truncate font-mono text-xs text-muted-foreground">@{user.userName}</p>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label="Account menu"
-          className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <EllipsisVertical className="size-4" aria-hidden="true" />
         </DropdownMenuTrigger>
@@ -170,7 +170,7 @@ function UserCard({ user, onAccount, onSignOut }) {
 function SideNav({ projects, className }) {
   const linkClass = ({ isActive }) =>
     cn(
-      "group/nav flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] font-medium transition-colors duration-150 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-4",
+      "group/nav flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-4",
       isActive
         ? "bg-secondary text-foreground [&_svg]:text-highlight"
         : "text-subtle-foreground hover:bg-secondary/70 hover:text-foreground [&_svg]:text-muted-foreground",
@@ -179,7 +179,7 @@ function SideNav({ projects, className }) {
   return (
     <nav aria-label="Main" className={cn("flex min-h-0 flex-col gap-6", className)}>
       <div>
-        <p className="section-label px-2.5 pb-1.5">Workspace</p>
+        <p className="section-label px-2.5 pb-2">Workspace</p>
         <ul className="space-y-0.5">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <li key={to}>
@@ -192,9 +192,9 @@ function SideNav({ projects, className }) {
       </div>
 
       <div className="min-h-0 overflow-y-auto">
-        <p className="section-label px-2.5 pb-1.5">Your projects</p>
+        <p className="section-label px-2.5 pb-2">Your projects</p>
         {projects === null ? null : projects.length === 0 ? (
-          <p className="px-2.5 text-xs text-muted-foreground">No projects yet</p>
+          <p className="px-2.5 text-[13px] text-muted-foreground">No projects yet</p>
         ) : (
           <ul className="space-y-0.5">
             {projects.map(({ project }) => (
@@ -202,7 +202,7 @@ function SideNav({ projects, className }) {
                 <NavLink to={`/projects/${project._id}`} className={linkClass}>
                   <span
                     aria-hidden="true"
-                    className="grid size-5 shrink-0 place-items-center rounded-[4px] border border-border bg-elevated text-[10px] font-semibold text-subtle-foreground group-aria-[current=page]/nav:border-highlight/40 group-aria-[current=page]/nav:text-highlight"
+                    className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-border bg-elevated font-mono text-[10px] font-medium text-subtle-foreground group-aria-[current=page]/nav:border-highlight/40 group-aria-[current=page]/nav:text-highlight"
                   >
                     {project.name.charAt(0).toUpperCase()}
                   </span>
