@@ -38,7 +38,7 @@ export default function Dashboard() {
       inProgress: open.filter((x) => x.status === "in_progress").length,
       overdue: dated.filter((x) => days(x) < 0).length,
       dueThisWeek: dated.filter((x) => days(x) >= 0 && days(x) <= 6).length,
-      nextTwoWeeks: dated.filter((x) => days(x) >= 0 && days(x) <= 13).length,
+      nextTwoWeeks: dated.filter((x) => days(x) >= 0 && days(x) <= ROUTE_END).length,
       upcoming: dated.slice(0, 6),
       openByProject: open.reduce((m, x) => ((m[x.projectId] = (m[x.projectId] || 0) + 1), m), {}),
     };
@@ -111,6 +111,45 @@ export default function Dashboard() {
       <div className="grid items-start gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-8">
           <Panel
+            title="Upcoming deadlines"
+            description={
+              !loading &&
+              summary.dated.length > 0 &&
+              `${summary.nextTwoWeeks} in the next two weeks${summary.overdue ? `, ${summary.overdue} overdue` : ""}`
+            }
+            action={
+              <Link to="/calendar" className={quietLink}>
+                Calendar <ArrowRight aria-hidden="true" />
+              </Link>
+            }
+            className="pb-2 sm:pb-2"
+          >
+            {loading ? (
+              <div className="space-y-2 pb-4">
+                <Skeleton className="h-24 w-full rounded-lg" />
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : summary.dated.length === 0 ? (
+              <p className="pb-4 text-sm text-muted-foreground">
+                None of your open tasks has a deadline. Set one from a task&apos;s panel.
+              </p>
+            ) : (
+              <>
+                <DeadlineRoute tasks={summary.dated} />
+                <ul className="-mx-5 divide-y divide-border border-t border-border sm:-mx-6">
+                  {summary.upcoming.map((t) => (
+                    <li key={t._id}>
+                      <TaskRow task={t} showStatus={false} className="px-5 sm:px-6" />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </Panel>
+
+          <Panel
             title="Your projects"
             action={
               <Link to="/projects" className={quietLink}>
@@ -143,41 +182,6 @@ export default function Dashboard() {
                 {projects.slice(0, 5).map(({ project, role }) => (
                   <li key={project._id}>
                     <ProjectRow project={project} role={role} openTasks={summary.openByProject[project._id] || 0} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          <Panel
-            title="Upcoming deadlines"
-            description={
-              !loading &&
-              summary.dated.length > 0 &&
-              `${summary.nextTwoWeeks} in the next two weeks${summary.overdue ? `, ${summary.overdue} overdue` : ""}`
-            }
-            action={
-              <Link to="/calendar" className={quietLink}>
-                Calendar <ArrowRight aria-hidden="true" />
-              </Link>
-            }
-            className="pb-2 sm:pb-2"
-          >
-            {loading ? (
-              <div className="space-y-2 pb-4">
-                {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : summary.dated.length === 0 ? (
-              <p className="pb-4 text-sm text-muted-foreground">
-                None of your open tasks has a deadline. Set one from a task&apos;s panel.
-              </p>
-            ) : (
-              <ul className="-mx-5 divide-y divide-border border-t border-border sm:-mx-6">
-                {summary.upcoming.map((t) => (
-                  <li key={t._id}>
-                    <TaskRow task={t} showStatus={false} className="px-5 sm:px-6" />
                   </li>
                 ))}
               </ul>
@@ -263,6 +267,174 @@ function StatCard({ label, value, note, noteClass }) {
         <p className="mt-2 text-[32px] leading-8 font-medium tabular-nums">{value}</p>
       )}
       <p className={cn("mt-2 h-4 truncate font-mono text-xs leading-4 text-muted-foreground", noteClass)}>{note || null}</p>
+    </div>
+  );
+}
+
+/*
+ * The route: the next two weeks as a trail. Days are tick marks on one line,
+ * each deadline is a waypoint on its day, overdue ones sit on the dashed
+ * stretch behind you, and the leg from today to the next deadline is drawn
+ * in the accent. Today is the trail blaze under the line.
+ */
+const ROUTE_START = -3;
+const ROUTE_END = 13;
+const LINE = 68; // y of the route line, in px
+const STEP = 16; // vertical step between stacked waypoints
+
+function DeadlineRoute({ tasks }) {
+  const span = ROUTE_END - ROUTE_START;
+  const x = (d) => ((Math.min(Math.max(d, ROUTE_START), ROUTE_END) - ROUTE_START) / span) * 100;
+
+  const byDay = new Map();
+  for (const t of tasks) {
+    const d = daysUntilDue(t.dueDate);
+    if (d > ROUTE_END) continue;
+    const key = Math.max(d, ROUTE_START);
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key).push(t);
+  }
+  const next = tasks.find((t) => daysUntilDue(t.dueDate) >= 0);
+  const nextDay = next ? daysUntilDue(next.dueDate) : null;
+  const showNext = next && nextDay <= ROUTE_END;
+  const nextStack = showNext ? Math.min(byDay.get(nextDay).length, 3) : 0;
+  const overdue = tasks.filter((t) => daysUntilDue(t.dueDate) < 0).length;
+  const ahead = tasks.filter((t) => daysUntilDue(t.dueDate) >= 0 && daysUntilDue(t.dueDate) <= ROUTE_END).length;
+
+  const today = new Date();
+  const days = Array.from({ length: span + 1 }, (_, i) => ({
+    i,
+    d: ROUTE_START + i,
+    date: new Date(today.getFullYear(), today.getMonth(), today.getDate() + ROUTE_START + i),
+  }));
+
+  return (
+    <div
+      role="img"
+      aria-label={`${plural(ahead, "deadline")} in the next two weeks${overdue ? `, ${overdue} overdue` : ""}`}
+      className="px-5 pt-1 pb-4"
+    >
+      <div className="relative h-27 select-none">
+        {/* weekends, shaded like the off days on a planning board */}
+        {days
+          .filter(({ date, i }) => date.getDay() === 6 || (i === 0 && date.getDay() === 0))
+          .map(({ d, date }) => {
+            const from = Math.max(d - 0.5, ROUTE_START);
+            const to = Math.min(date.getDay() === 6 ? d + 1.5 : d + 0.5, ROUTE_END);
+            return (
+              <span
+                key={`we-${d}`}
+                className="absolute bg-foreground/[0.03]"
+                style={{ left: `${x(from)}%`, width: `${x(to) - x(from)}%`, top: 24, height: LINE - 24 + 20 }}
+              />
+            );
+          })}
+        {/* the stretch behind you, dashed, then the line ahead */}
+        <span
+          className="absolute left-0 border-t border-dashed border-foreground/30"
+          style={{ top: LINE, width: `${x(0)}%` }}
+        />
+        <span className="absolute right-0 h-px bg-foreground/20" style={{ top: LINE, left: `${x(0)}%` }} />
+        {showNext && nextDay > 0 && (
+          <span
+            className="absolute h-0.5 rounded-full bg-highlight"
+            style={{ top: LINE - 0.5, left: `${x(0)}%`, width: `${x(nextDay) - x(0)}%` }}
+          />
+        )}
+
+        {/* day ticks and labels; Mondays get a longer tick */}
+        {days.map(({ d, date, i }) => {
+          const isToday = d === 0;
+          const label = isToday
+            ? "Today"
+            : i === 0 || date.getDate() === 1
+              ? date.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+              : date.getDate();
+          return (
+            <span key={d}>
+              {isToday ? (
+                // the trail blaze
+                <span
+                  className="absolute h-4 w-1 -translate-x-1/2 rounded-[1px] bg-highlight"
+                  style={{ left: `${x(d)}%`, top: LINE + 4 }}
+                />
+              ) : (
+                <span
+                  className={cn(
+                    "absolute w-px -translate-x-1/2",
+                    date.getDay() === 1 ? "h-2 bg-foreground/35" : "h-1 bg-foreground/20",
+                  )}
+                  style={{ left: `${x(d)}%`, top: LINE + 4 }}
+                />
+              )}
+              <span
+                className={cn(
+                  "absolute -translate-x-1/2 font-mono text-[11px] leading-4 whitespace-nowrap tabular-nums",
+                  isToday ? "font-medium text-foreground" : "text-muted-foreground",
+                  !isToday && (i % 2 === 1 || Math.abs(d) === 1) && "max-sm:hidden",
+                )}
+                style={{ left: `${x(d)}%`, top: LINE + 24 }}
+              >
+                {label}
+              </span>
+            </span>
+          );
+        })}
+
+        {/* waypoints, stacked upward when a day has several */}
+        {[...byDay.entries()].map(([d, list]) =>
+          (list.includes(next) ? [next, ...list.filter((t) => t !== next)] : list).slice(0, 3).map((t, k) => (
+            <span
+              key={t._id}
+              title={t.title}
+              className={cn(
+                "absolute -translate-x-1/2 -translate-y-1/2 rounded-full ring-[3px] ring-card",
+                t === next
+                  ? "size-3.5 bg-highlight"
+                  : d < 0
+                    ? "size-3 bg-danger"
+                    : "size-3 border-[1.5px] border-foreground/60 bg-card",
+              )}
+              style={{ left: `${x(d)}%`, top: LINE - k * STEP }}
+            />
+          )),
+        )}
+        {[...byDay.entries()]
+          .filter(([, list]) => list.length > 3)
+          .map(([d, list]) => (
+            <span
+              key={`more-${d}`}
+              className="absolute ml-3 font-mono text-[11px] leading-4 text-muted-foreground"
+              style={{ left: `${x(d)}%`, top: LINE - 2 * STEP - 8 }}
+            >
+              +{list.length - 3}
+            </span>
+          ))}
+
+        {/* the next deadline, named above its waypoint */}
+        {showNext && (
+          <>
+            <span
+              className={cn(
+                "absolute top-0 flex max-w-[55%] items-baseline gap-2 text-xs leading-4",
+                x(nextDay) > 60 && "flex-row-reverse",
+              )}
+              style={
+                x(nextDay) > 60
+                  ? { right: `${100 - x(nextDay)}%`, marginRight: -6 }
+                  : { left: `${x(nextDay)}%`, marginLeft: -6 }
+              }
+            >
+              <span className="shrink-0 font-mono text-highlight">Next</span>
+              <span className="truncate text-foreground">{next.title}</span>
+            </span>
+            <span
+              className="absolute w-px -translate-x-1/2 bg-highlight/40"
+              style={{ left: `${x(nextDay)}%`, top: 20, height: LINE - (nextStack - 1) * STEP - 10 - 20 }}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }
