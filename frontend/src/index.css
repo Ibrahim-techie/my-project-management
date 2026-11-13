@@ -24,8 +24,13 @@
   --radius-3xl: calc(var(--radius) + 6px);
   --radius-4xl: calc(var(--radius) + 10px);
 
+  /* One curve for every transition */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 150ms;
+
   --animate-chai-spin: chai-spin 4s linear infinite;
-  --animate-chai-pop: chai-pop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-chai-pop: chai-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-chai-fade: chai-fade 0.15s ease;
 
   --color-background: var(--background);
@@ -253,7 +258,7 @@
   border: 1px solid var(--border);
   background: var(--card);
   box-shadow: var(--shadow-card);
-  transition: border-color 200ms, background-color 200ms, box-shadow 200ms;
+  transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out);
   &:hover {
     border-color: var(--card-edge-hover);
   }
