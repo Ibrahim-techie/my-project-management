@@ -32,7 +32,7 @@ function Segmented(
           aria-label={o['aria-label']}
           onClick={() => onChange(o.value)}
           className={cn(
-            "inline-flex h-7 min-w-7 rounded-md shrink-0 cursor-pointer items-center justify-center gap-1.5 px-3 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset [&_svg:not([class*='size-'])]:size-4",
+            "inline-flex h-7 min-w-7 pointer-coarse:h-9 rounded-md shrink-0 cursor-pointer items-center justify-center gap-1.5 px-3 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset [&_svg:not([class*='size-'])]:size-4",
             value === o.value
               ? 'bg-elevated text-foreground shadow-[var(--shadow-card)] ring-1 ring-border'
               : 'text-muted-foreground hover:text-foreground'

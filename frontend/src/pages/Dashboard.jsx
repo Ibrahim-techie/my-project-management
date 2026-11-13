@@ -312,7 +312,7 @@ function DeadlineRoute({ tasks }) {
     <div
       role="img"
       aria-label={`${plural(ahead, "deadline")} in the next two weeks${overdue ? `, ${overdue} overdue` : ""}`}
-      className="px-5 pt-1 pb-4"
+      className="@container px-5 pt-1 pb-4"
     >
       <div className="relative h-27 select-none">
         {/* weekends, shaded like the off days on a planning board */}
@@ -371,7 +371,8 @@ function DeadlineRoute({ tasks }) {
                 className={cn(
                   "absolute -translate-x-1/2 font-mono text-[11px] leading-4 whitespace-nowrap tabular-nums",
                   isToday ? "font-medium text-foreground" : "text-muted-foreground",
-                  !isToday && (i % 2 === 1 || Math.abs(d) === 1) && "max-sm:hidden",
+                  // thin the labels out when the panel is narrow, not just the screen
+                  !isToday && (i % 2 === 1 || Math.abs(d) === 1) && "@max-xl:hidden",
                 )}
                 style={{ left: `${x(d)}%`, top: LINE + 24 }}
               >
