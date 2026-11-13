@@ -48,7 +48,7 @@ export function AuthShell({
       <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <main className="flex flex-col justify-center bg-sidebar px-5 py-10 sm:px-12 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-md lg:mx-0">
-            <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[34px] sm:leading-[42px]">{title}</h1>
+            <h1 className="text-[28px] leading-9 font-medium sm:text-[34px] sm:leading-[42px]">{title}</h1>
             {description && <p className="mt-2 text-[15px] text-muted-foreground">{description}</p>}
             <div className="mt-8">{children}</div>
             {below && <p className="mt-8 text-sm text-muted-foreground">{below}</p>}
@@ -65,7 +65,7 @@ export function AuthShell({
             className="absolute inset-0 size-full object-cover opacity-80" />
           <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-[#0b1120] via-[#0b1120]/55 to-transparent" />
           <div className="relative space-y-3 p-10 xl:p-14">
-            <p className="label-caps text-slate-400">Built for project teams</p>
+            <p className="section-label text-slate-400">Built for project teams</p>
             {FEATURES.map(({ icon: Icon, title: t, body }) => (
               <div
                 key={t}
@@ -227,7 +227,7 @@ export function OAuthButtons({
         ))}
       </div>
       <div
-        className="label-caps flex items-center gap-3"
+        className="section-label flex items-center gap-3"
         aria-hidden="true">
         <span className="h-px flex-1 bg-border" />
         Or continue with email

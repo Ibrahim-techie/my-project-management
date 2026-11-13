@@ -17,7 +17,7 @@ export function ThemeSwitcher({
       aria-label="Toggle theme"
       title="Toggle theme"
       className={cn(
-        'inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-subtle-foreground transition-colors duration-200 outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'inline-flex size-9 cursor-pointer items-center justify-center rounded-md text-subtle-foreground transition-colors outline-none hover:bg-secondary hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
         className
       )}>
       <svg
@@ -25,11 +25,11 @@ export function ThemeSwitcher({
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
-        className="size-[18px]">
+        className="size-4">
         <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
         <path d="M12 3l0 18" />
         <path d="M12 9l4.65 -4.65" />

@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { api, errMsg, unwrap } from "../api";
-import { AnimatedBadge } from "@/components/animated-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { useToast } from "@/components/ui/toast";
 import { ROLE_LABEL, displayName, relativeTime } from "@/lib/format";
 
@@ -53,33 +51,30 @@ export function PendingInvites({ onJoined }) {
   if (invites.length === 0) return null;
 
   return (
-    <section aria-labelledby="invites-heading" className="space-y-3">
-      <AnimatedBadge>
-        <span id="invites-heading">
-          {invites.length === 1 ? "You have a project invite" : `You have ${invites.length} project invites`}
-        </span>
-      </AnimatedBadge>
+    <section aria-labelledby="invites-heading" className="space-y-2">
+      <h2 id="invites-heading" className="section-label">
+        {invites.length === 1 ? "Project invite" : `${invites.length} project invites`}
+      </h2>
       <ul className="space-y-2">
         <AnimatePresence initial={false}>
           {invites.map((inv) => (
             <motion.li
               key={inv._id}
-              layout={!still}
-              initial={still ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={still ? undefined : { opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.25 }}
-              className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
+              initial={still ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={still ? undefined : { opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="surface-card flex flex-col gap-3 p-4 hover:border-border sm:flex-row sm:items-center"
             >
-              <UserAvatar user={inv.invitedBy} className="size-9" />
+              <UserAvatar user={inv.invitedBy} className="size-8" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm">
                   <span className="font-medium">{displayName(inv.invitedBy)}</span>
                   <span className="text-subtle-foreground"> invited you to </span>
-                  <span className="font-semibold">{inv.project.name}</span>
+                  <span className="font-medium">{inv.project.name}</span>
                 </p>
-                <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                  <Chip tone="brand">{ROLE_LABEL[inv.role]}</Chip> {relativeTime(inv.updatedAt || inv.createdAt)}
+                <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                  As {ROLE_LABEL[inv.role].toLowerCase()} · {relativeTime(inv.updatedAt || inv.createdAt)}
                 </p>
               </div>
               <div className="flex gap-2">

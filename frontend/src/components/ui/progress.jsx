@@ -27,8 +27,8 @@ function Progress({
       )}
       {...props}>
       <ProgressPrimitive.Indicator
-        className="h-full rounded-full bg-highlight transition-[width] duration-500 ease-out"
-        style={{ width: `${pct}%` }} />
+        className="h-full w-full rounded-full bg-highlight transition-transform duration-300 ease-out"
+        style={{ transform: `translateX(-${100 - pct}%)` }} />
     </ProgressPrimitive.Root>
   );
 }

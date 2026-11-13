@@ -2,15 +2,15 @@ import { cn } from "@/lib/utils";
 
 /**
  * The page heading on listing pages: a left-aligned title, an optional
- * mono `meta` pill beside it ("8 open · 24 done"), a muted lead and an
+ * mono `meta` beside it ("8 open · 24 done"), a muted lead and an
  * optional `action` on the right.
  */
 export function PageTitle({ title, meta, action, children, className }) {
   return (
     <div className={cn("flex flex-col gap-4 md:flex-row md:items-end md:justify-between", className)}>
-      <div className="min-w-0 space-y-1.5">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[32px] sm:leading-10">{title}</h1>
+      <div className="min-w-0 space-y-2">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-[28px] leading-9 font-medium sm:text-[32px] sm:leading-10">{title}</h1>
           {meta != null && <MetaPill>{meta}</MetaPill>}
         </div>
         {children && <p className="max-w-3xl text-[15px] text-muted-foreground">{children}</p>}
@@ -20,30 +20,25 @@ export function PageTitle({ title, meta, action, children, className }) {
   );
 }
 
-/** A small mono pill for counts next to a heading. */
+/** Quiet mono text for counts next to a heading. */
 export function MetaPill({ className, children }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-0.5 font-mono text-[11px] font-medium text-subtle-foreground tabular-nums",
-        className,
-      )}
-    >
+    <span className={cn("inline-flex items-center font-mono text-xs text-muted-foreground tabular-nums", className)}>
       {children}
     </span>
   );
 }
 
-/** A section heading with an optional icon, and an action on the right. */
+/** A section heading with an optional muted icon, and an action on the right. */
 export function SectionTitle({ title, icon: Icon, action, children, className }) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-3", className)}>
-      <div>
-        <h2 className="flex items-center gap-2 text-lg leading-7 font-semibold">
-          {Icon && <Icon className="size-[18px] text-highlight" aria-hidden="true" />}
+    <div className={cn("flex flex-wrap items-baseline justify-between gap-3", className)}>
+      <div className="min-w-0">
+        <h2 className="flex items-center gap-2 text-base leading-6 font-medium">
+          {Icon && <Icon className="size-4 text-muted-foreground" aria-hidden="true" />}
           {title}
         </h2>
-        {children && <p className="mt-0.5 text-sm text-muted-foreground">{children}</p>}
+        {children && <p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">{children}</p>}
       </div>
       {action}
     </div>
@@ -73,7 +68,7 @@ export function EmptyState({ icon: Icon, title, children, action, className }) {
           <Icon className="size-5" aria-hidden="true" />
         </span>
       )}
-      <p className="mt-3 font-semibold">{title}</p>
+      <p className="mt-3 font-medium">{title}</p>
       {children && <p className="mt-1 max-w-sm text-sm text-muted-foreground">{children}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>

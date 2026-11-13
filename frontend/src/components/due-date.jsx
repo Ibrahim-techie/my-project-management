@@ -18,6 +18,24 @@ export function DueChip({ date, status, className }) {
   );
 }
 
+const TEXT = {
+  overdue: "text-danger",
+  soon: "text-foreground",
+  later: "text-muted-foreground",
+  done: "text-muted-foreground",
+};
+
+/** A deadline as quiet mono text for list rows, coloured only when it is close or late. */
+export function DueText({ date, status, className }) {
+  const info = dueInfo(date, status);
+  if (!info) return null;
+  return (
+    <span title={info.full} className={cn("font-mono text-xs whitespace-nowrap tabular-nums", TEXT[info.urgency], className)}>
+      {info.label}
+    </span>
+  );
+}
+
 /**
  * A button that opens the browser's date picker. The real <input type="date">
  * sits invisibly under the button so the picker anchors to it; `value` and

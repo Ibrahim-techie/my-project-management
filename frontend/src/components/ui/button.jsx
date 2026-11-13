@@ -7,15 +7,15 @@ import { cn } from '@/lib/utils'
 /**
  * CAMP buttons.
  *
- * - `solid` is the primary action (Create, Save): midnight navy that turns
- *   cobalt on hover. Keep it to one or two per view.
+ * - `solid` is the primary action (Create, Save): midnight navy in light,
+ *   an off-white in dark. Keep it to one per view.
  * - `soft` is the default secondary action: a white surface on a hairline.
  * - `outline` is transparent on a hairline; `ghost` has no chrome.
  * - `muted` is the quiet "View all" style link button.
  * - `danger` is for the confirm step of a destructive action.
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,filter,transform] duration-200 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,transform] duration-150 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {

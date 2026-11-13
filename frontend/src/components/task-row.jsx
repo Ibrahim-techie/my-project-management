@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { DueChip } from "@/components/due-date";
+import { DueText } from "@/components/due-date";
 import { Chip } from "@/components/ui/chip";
 import { STATUS_LABEL, taskHref } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -12,23 +12,15 @@ export function StatusDot({ status, className }) {
   return <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", DOT[status] || DOT.todo, className)} />;
 }
 
-/** A project name as the mono tag the Stitch lists use. */
+/** A project name as quiet text beside a task. */
 export function ProjectTag({ children, className }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex max-w-40 items-center truncate rounded-[4px] border border-border bg-secondary px-1.5 py-0.5 font-mono text-[11px] font-medium text-subtle-foreground",
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
+  return <span className={cn("truncate text-[13px] text-muted-foreground", className)}>{children}</span>;
 }
 
 /**
- * One task in a cross-project list: status dot, title, project tag, the
- * deadline and status on the right. The whole row links to the task.
+ * One task in a cross-project list: status dot, title, project, then the
+ * deadline and status on the right. One line from `sm` up, two on phones.
+ * The whole row links to the task.
  */
 export function TaskRow({ task, showStatus = true, className }) {
   const done = task.status === "done";
@@ -41,23 +33,23 @@ export function TaskRow({ task, showStatus = true, className }) {
       )}
     >
       <StatusDot status={task.status} />
-      <div className="min-w-0 flex-1">
-        <p className={cn("truncate font-medium group-hover:text-highlight", done && "text-muted-foreground line-through")}>
+      <div className="min-w-0 flex-1 sm:flex sm:items-baseline sm:gap-3">
+        <p className={cn("truncate font-medium sm:min-w-0 sm:flex-1", done && "text-muted-foreground line-through")}>
           {task.title}
         </p>
-        <div className="mt-1 flex min-w-0 items-center gap-2">
+        <div className="mt-0.5 flex min-w-0 items-baseline gap-2 sm:mt-0 sm:w-40 sm:shrink-0">
           {task.projectName && <ProjectTag>{task.projectName}</ProjectTag>}
-          <DueChip date={task.dueDate} status={task.status} className="sm:hidden" />
+          <DueText date={task.dueDate} status={task.status} className="ml-auto sm:hidden" />
         </div>
       </div>
-      <DueChip date={task.dueDate} status={task.status} className="hidden sm:inline-flex" />
+      <DueText date={task.dueDate} status={task.status} className="hidden w-36 shrink-0 text-right sm:inline" />
       {showStatus && (
         <Chip tone={task.status} className="hidden sm:inline-flex">
           {STATUS_LABEL[task.status]}
         </Chip>
       )}
       <ArrowRight
-        className="size-4 shrink-0 text-muted-foreground transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-highlight"
+        className="size-4 shrink-0 text-muted-foreground transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-foreground"
         aria-hidden="true"
       />
     </Link>

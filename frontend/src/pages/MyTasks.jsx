@@ -69,7 +69,7 @@ export default function MyTasks() {
 
   return (
     <div>
-      <PageTitle title="My Tasks" meta={tasks ? `${openCount} open · ${doneCount} done` : null}>
+      <PageTitle title="My tasks" meta={tasks ? `${openCount} open · ${doneCount} done` : null}>
         Everything assigned to <span className="highlight">you</span>, across all your projects.
       </PageTitle>
 
