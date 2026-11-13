@@ -6,8 +6,11 @@
 
 /*
  * CAMP, after the Stitch "Executive Precision" design system: a cool slate
- * canvas, white cards on hairline borders, a midnight navy for primary
- * actions, cobalt for anything interactive and emerald for done.
+ * canvas (graphite in the dark), white cards on hairline borders and a
+ * midnight navy for primary actions. Cobalt is the one accent: the trail
+ * blaze on the active nav row, today and the next deadline, focus. Status
+ * colours only ever mean a status: slate to do, amber in progress, emerald
+ * done.
  */
 @theme inline {
   --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, sans-serif;
@@ -169,7 +172,7 @@
   --shadow-pop: 0 4px 6px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.04);
 
   --status-todo: #64748b;
-  --status-progress: #2563eb;
+  --status-progress: #b45309;
   --status-review: #7c3aed;
   --status-done: #059669;
   --status-blocked: #dc2626;
@@ -210,7 +213,7 @@
   --shadow-pop: 0 8px 24px -4px rgb(0 0 0 / 0.5);
 
   --status-todo: #8e8e94;
-  --status-progress: #60a5fa;
+  --status-progress: #e8a33d;
   --status-review: #a78bfa;
   --status-done: #4cc38a;
   --status-blocked: #e5484d;
