@@ -211,18 +211,34 @@ export function OAuthButtons({
   onSelect,
   verb = 'Continue'
 }) {
-  if (!providers.length) return null
+  const [pending, setPending] = React.useState(null)
+
+  // Coming back with the Back button can restore this page as it was left,
+  // with the button still saying it is opening the provider
+  React.useEffect(() => {
+    const reset = (e) => e.persisted && setPending(null)
+    window.addEventListener('pageshow', reset)
+    return () => window.removeEventListener('pageshow', reset)
+  }, [])
+
+  const known = providers.filter((p) => providerMeta[p])
+  if (!known.length) return null
   return (
     <div className="space-y-4">
       <div className="grid gap-2">
-        {providers.map((p) => (
+        {known.map((p) => (
           <button
             key={p}
             type="button"
-            onClick={() => onSelect(p)}
-            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-input-bg text-sm font-medium shadow-[var(--shadow-card)] transition-colors duration-150 outline-none hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/50">
+            disabled={pending !== null}
+            aria-busy={pending === p || undefined}
+            onClick={() => {
+              setPending(p)
+              onSelect(p)
+            }}
+            className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-input-bg text-sm font-medium shadow-[var(--shadow-card)] transition-colors duration-150 outline-none hover:bg-secondary focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-default disabled:opacity-60 pointer-coarse:h-11">
             {providerMeta[p].icon}
-            {verb} with {providerMeta[p].label}
+            {pending === p ? `Opening ${providerMeta[p].label}` : `${verb} with ${providerMeta[p].label}`}
           </button>
         ))}
       </div>
@@ -237,12 +253,19 @@ export function OAuthButtons({
   );
 }
 
-/** Hands a provider to `onOAuth`, or explains that it is not wired yet. */
-export function oauthHandler(onOAuth, fail) {
-  return (p) =>
-    onOAuth ? onOAuth(p) : fail(
-      `Signing in with ${providerMeta[p].label} is not connected yet. Pass onOAuth to wire it.`
-    );
+const OAUTH_ERRORS = {
+  cancelled: (p) => `Signing in with ${p} was cancelled.`,
+  expired: (p) => `Signing in with ${p} took too long or was started in another tab. Please try again.`,
+  unverified_email: (p) => `Your ${p} account has no verified email address, so it can't be used to sign in.`,
+  unavailable: (p) => `Signing in with ${p} isn't available right now.`,
+  failed: (p) => `We couldn't sign you in with ${p}. Please try again.`,
+}
+
+/** The message for an `oauth_error` the server sent back to /login. */
+export function oauthErrorMessage(reason, provider) {
+  if (!reason) return null
+  const label = providerMeta[provider]?.label || 'that account'
+  return (OAUTH_ERRORS[reason] || OAUTH_ERRORS.failed)(label)
 }
 
 /**

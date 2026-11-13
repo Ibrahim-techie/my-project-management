@@ -2,11 +2,13 @@ import { useState } from "react";
 import { MailCheck } from "lucide-react";
 import { ResendVerification } from "@/components/resend-verification";
 import { api, errMsg } from "../api";
+import { oauthStartUrl, useOAuthProviders } from "../auth.jsx";
 import {
   AuthLink,
   AuthShell,
   Field,
   FormError,
+  OAuthButtons,
   PasswordInput,
   SubmitButton,
   TextInput,
@@ -16,6 +18,7 @@ import {
 export default function Register() {
   const [form, setForm] = useState({ fullName: "", userName: "", email: "", password: "" });
   const [sentTo, setSentTo] = useState("");
+  const providers = useOAuthProviders();
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
   const { busy, error, run } = useAuthSubmit(async () => {
     try {
@@ -59,26 +62,29 @@ export default function Register() {
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <FormError message={error} />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Full name">
-            <TextInput value={form.fullName} onChange={set("fullName")} autoComplete="name" required autoFocus />
+      <div className="space-y-6">
+        <OAuthButtons providers={providers} onSelect={(provider) => window.location.assign(oauthStartUrl(provider))} />
+        <form onSubmit={submit} className="space-y-4" noValidate>
+          <FormError message={error} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Full name">
+              <TextInput value={form.fullName} onChange={set("fullName")} autoComplete="name" required autoFocus />
+            </Field>
+            <Field label="Username" hint="Lowercase, used when teammates add you">
+              <TextInput value={form.userName} onChange={set("userName")} autoComplete="username" required />
+            </Field>
+          </div>
+          <Field label="Email">
+            <TextInput type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
           </Field>
-          <Field label="Username" hint="Lowercase, used when teammates add you">
-            <TextInput value={form.userName} onChange={set("userName")} autoComplete="username" required />
+          <Field label="Password">
+            <PasswordInput value={form.password} onChange={set("password")} autoComplete="new-password" required />
           </Field>
-        </div>
-        <Field label="Email">
-          <TextInput type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
-        </Field>
-        <Field label="Password">
-          <PasswordInput value={form.password} onChange={set("password")} autoComplete="new-password" required />
-        </Field>
-        <SubmitButton busy={busy} busyLabel="Creating account">
-          Create account
-        </SubmitButton>
-      </form>
+          <SubmitButton busy={busy} busyLabel="Creating account">
+            Create account
+          </SubmitButton>
+        </form>
+      </div>
     </AuthShell>
   );
 }

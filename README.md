@@ -11,6 +11,7 @@ A project management app for small teams. Set up projects, invite your team with
 - **My tasks.** Everything assigned to you across all projects, grouped by due date.
 - **Calendar.** A month view of task deadlines, with the next seven days and anything overdue.
 - **Live updates.** Boards update in real time over Socket.IO, and people removed from a project lose access straight away.
+- **Sign in with Google or GitHub**, next to email and password, once the provider keys are set.
 - **Email.** Verification, password reset, invites, assignments, deadline changes and reminders, role changes, removals and password-change notices.
 - **Light and dark themes.**
 
@@ -91,6 +92,12 @@ SMTP_USER=
 SMTP_PASS=
 EMAIL_SENDER_ADDRESS=
 EMAIL_SENDER_NAME=CAMP
+
+# Optional: sign in with Google or GitHub
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
 ```
 
 | Variable | What it does |
@@ -103,6 +110,9 @@ EMAIL_SENDER_NAME=CAMP
 | `APP_NAME` | Product name used in emails, `CAMP` by default |
 | `DEADLINE_REMINDERS` | Set to `off` to stop the hourly reminder job |
 | `CRON_SECRET` | Turns on `POST /api/v1/reminders/run` for an external scheduler |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Turn on Sign in with Google |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Turn on Sign in with GitHub |
+| `OAUTH_REDIRECT_BASE` | Base of the OAuth redirect URI when it isn't `FRONTEND_URL` |
 
 The web app needs no configuration in development. Vite proxies `/api` to `http://localhost:5000`. To point it at another API, set `VITE_API_URL` in `frontend/.env`.
 
@@ -138,7 +148,7 @@ All routes live under `/api/v1`. Responses are shaped as `{ statusCode, message,
 
 | Area | Routes |
 | --- | --- |
-| Auth | under `/auth`: `/register`, `/login`, `/logout`, `/refresh-token`, `/current-user`, `/change-password`, `/verify-email/:token`, `/resend-email-verification`, `/forgot-password`, `/reset-password` |
+| Auth | under `/auth`: `/register`, `/login`, `/logout`, `/refresh-token`, `/current-user`, `/change-password`, `/verify-email/:token`, `/resend-email-verification`, `/forgot-password`, `/reset-password`, `/oauth/providers`, `/oauth/:provider`, `/oauth/:provider/callback` |
 | Projects | `/project`, `/project/:projectId` |
 | Members | `/project/:projectId/members`, `/project/:projectId/members/:userId` |
 | Project invites | `/project/:projectId/invites`, `.../invites/:inviteId`, `.../invites/:inviteId/resend` |
@@ -159,6 +169,21 @@ Each person has a role per project:
 | Admin | Everything: edit or delete the project, manage members and invites, and write notes |
 | Project admin | Create, edit and delete tasks and subtasks |
 | Member | View the project, its tasks and notes, and tick off subtasks |
+
+## Sign in with Google or GitHub
+
+Each provider turns on when both its client ID and secret are set; its button then shows on the sign-in and sign-up pages. Create an OAuth client with the provider and register this redirect URI, with your web app's address in place of `FRONTEND_URL`:
+
+| Provider | Where | Redirect URI |
+| --- | --- | --- |
+| Google | Google Cloud console, Credentials, OAuth client ID (web application) | `FRONTEND_URL/api/v1/auth/oauth/google/callback` |
+| GitHub | GitHub settings, Developer settings, OAuth Apps | `FRONTEND_URL/api/v1/auth/oauth/github/callback` |
+
+For local development that is `http://localhost:5173/api/v1/auth/oauth/google/callback`. The callback goes through the web app's own address, so the session cookies are first-party, the same as with email and password.
+
+- A first sign-in creates an account from the provider's verified email. Signing in with a provider whose email matches an existing account links the two.
+- If that existing account had never verified its email, its password is removed, since whoever set it never proved they own the address. The owner can set a new one with "Forgot password".
+- Cancelled or failed attempts return to the sign-in page with a message saying what happened.
 
 ## Deadline reminders
 

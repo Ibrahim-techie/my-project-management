@@ -45,6 +45,32 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => useContext(AuthContext);
 
+// Which of Google and GitHub the server has credentials for. Asked once per
+// page load; an empty list hides the buttons.
+let providersRequest = null;
+export function useOAuthProviders() {
+  const [providers, setProviders] = useState([]);
+  useEffect(() => {
+    let live = true;
+    providersRequest ??= api
+      .get("/auth/oauth/providers")
+      .then((res) => unwrap(res)?.providers || [])
+      .catch(() => {
+        providersRequest = null;
+        return [];
+      });
+    providersRequest.then((p) => live && setProviders(p));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return providers;
+}
+
+/** Where the browser goes to sign in with a provider; it comes back to `returnTo`. */
+export const oauthStartUrl = (provider, returnTo = "/") =>
+  `${api.defaults.baseURL.replace(/\/+$/, "")}/auth/oauth/${provider}?${new URLSearchParams({ returnTo })}`;
+
 export function RequireAuth({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();

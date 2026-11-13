@@ -222,6 +222,15 @@ const loginUser = asynchandler(async (req, res) => {
     );
   }
 
+  // Accounts created with Google or GitHub have no password until they set one
+  if (!user.password) {
+    const via = (user.oauth || []).map((o) => (o.provider === "github" ? "GitHub" : "Google")).join(" or ");
+    throw new ApiError(
+      400,
+      `This account signs in with ${via || "a linked account"}. Use that button, or set a password with "Forgot password".`,
+    );
+  }
+
   // Validate password
   const isValid = await user.comparePassword(password);
   if (!isValid) {
@@ -504,6 +513,10 @@ const changeOldPassword = asynchandler(async (req, res) => {
     throw new ApiError(400, "Old password and new password are required");
   }
 
+  if (!user.password) {
+    throw new ApiError(400, 'This account has no password yet. Set one with "Forgot password".');
+  }
+
   // compare oldPassword
 
   const isValid = await user.comparePassword(oldPassword);
@@ -530,6 +543,8 @@ const changeOldPassword = asynchandler(async (req, res) => {
 });
 
 export {
+  authCookieOptions,
+  generateAccessAndRefreshTokens,
   registerUser,
   loginUser,
   verifyEmail,

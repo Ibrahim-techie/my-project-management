@@ -43,10 +43,29 @@ const userSchema = new Schema(
       trim: true,
     },
 
+    // Optional for people who only sign in with Google or GitHub; they can
+    // add one later through "Forgot password"
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: [
+        function () {
+          return !this.oauth?.length;
+        },
+        "Password is required",
+      ],
       trim: true,
+    },
+
+    // Google or GitHub accounts linked to this user, by the provider's own id
+    oauth: {
+      type: [
+        {
+          _id: false,
+          provider: { type: String, enum: ["google", "github"], required: true },
+          providerId: { type: String, required: true },
+        },
+      ],
+      default: undefined,
     },
 
     isEmailVerified: {
@@ -86,9 +105,9 @@ const userSchema = new Schema(
 //pre hook to hash password before saving
 
 userSchema.pre("save", async function () {
-  // Only hash the password if it has been modified (or is new)
-
-  if (!this.isModified("password")) return;
+  // Hash the password only when it is new or changed, and not when it was
+  // removed (an account that only signs in with Google or GitHub)
+  if (!this.isModified("password") || !this.password) return;
 
   // Hash the password with a salt round of 10
 
@@ -98,6 +117,8 @@ userSchema.pre("save", async function () {
 // Method to compare password for login
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  // accounts created with Google or GitHub may have no password at all
+  if (!this.password || typeof candidatePassword !== "string") return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
@@ -147,6 +168,8 @@ userSchema.methods.generateEmailVerificationToken = function () {
 
   return { token, hashedToken, tokenExpiry  };
 };
+
+userSchema.index({ "oauth.provider": 1, "oauth.providerId": 1 }, { sparse: true });
 
 const User = mongoose.model("User", userSchema);
 export default User;

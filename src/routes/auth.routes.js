@@ -23,6 +23,7 @@ import {
 } from "../validators/index.js";
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { listOAuthProviders, oauthCallback, startOAuth } from "../controllers/oauth.controller.js";
 
 const router = Router();
 
@@ -31,6 +32,11 @@ router
   .post(userRegisterValidator(), validateRequest, registerUser);
 
 router.route("/login").post(userLoginValidator(), validateRequest, loginUser);
+
+// Sign in with Google or GitHub; see controllers/oauth.controller.js
+router.route("/oauth/providers").get(listOAuthProviders);
+router.route("/oauth/:provider").get(startOAuth);
+router.route("/oauth/:provider/callback").get(oauthCallback);
 
 router.route("/verify-email/:token").get(verifyEmail);
 
