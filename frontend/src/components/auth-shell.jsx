@@ -48,7 +48,7 @@ export function AuthShell({
       <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <main className="flex flex-col justify-center bg-sidebar px-5 py-10 sm:px-12 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-md lg:mx-0">
-            <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[34px] sm:leading-[42px]">{title}</h1>
+            <h1 className="text-[28px] leading-9 font-medium sm:text-[34px] sm:leading-[42px]">{title}</h1>
             {description && <p className="mt-2 text-[15px] text-muted-foreground">{description}</p>}
             <div className="mt-8">{children}</div>
             {below && <p className="mt-8 text-sm text-muted-foreground">{below}</p>}

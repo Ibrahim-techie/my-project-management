@@ -118,7 +118,7 @@ export default function ProjectDetail() {
       <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[32px] sm:leading-10">{project.name}</h1>
+            <h1 className="text-[28px] leading-9 font-medium sm:text-[32px] sm:leading-10">{project.name}</h1>
             {role && <Chip tone={isAdmin ? "brand" : "default"}>{ROLE_LABEL[role]}</Chip>}
           </div>
           {project.description && (

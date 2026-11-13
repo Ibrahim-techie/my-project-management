@@ -86,7 +86,7 @@ export default function Calendar() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
           <p className="font-mono text-xs font-medium tracking-wide text-highlight uppercase">Deadlines</p>
-          <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-[32px] sm:leading-10">Calendar</h1>
+          <h1 className="text-[28px] leading-9 font-medium sm:text-[32px] sm:leading-10">Calendar</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select
