@@ -1,139 +1,110 @@
 import { useMemo } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
-import {
-  AlarmClock,
-  ArrowRight,
-  ArrowUpRight,
-  CalendarDays,
-  CircleCheck,
-  FolderOpen,
-  ListChecks,
-  ListTodo,
-  Plus,
-  Users,
-} from "lucide-react";
+import { ArrowRight, FolderOpen, Plus, Users } from "lucide-react";
 import { useAuth } from "../auth.jsx";
 import { EmptyState, Panel } from "@/components/page";
 import { PendingInvites } from "@/components/pending-invites";
-import { Reveal } from "@/components/reveal";
 import { StatusDot, TaskRow } from "@/components/task-row";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ROLE_LABEL, STATUS_LABEL, daysUntilDue, displayName, relativeTime, taskHref } from "@/lib/format";
+import { ROLE_LABEL, STATUS_LABEL, daysUntilDue, relativeTime, taskHref } from "@/lib/format";
 import { useMyTasks } from "@/lib/use-tasks";
 import { cn } from "@/lib/utils";
 
-const greeting = () => {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-};
+const EASE = [0.22, 1, 0.36, 1];
 
-const today = () => new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+const quietLink =
+  "inline-flex items-center gap-1 rounded-md text-[13px] text-subtle-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-3.5";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { projects, reloadProjects } = useOutletContext();
   const myTasks = useMyTasks(projects, user._id);
+  const still = useReducedMotion();
 
   const summary = useMemo(() => {
     const t = myTasks || [];
     const open = t.filter((x) => x.status !== "done");
     const days = (x) => daysUntilDue(x.dueDate);
+    const dated = open.filter((x) => days(x) !== null).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
     return {
       open,
+      dated,
       done: t.length - open.length,
       total: t.length,
       inProgress: open.filter((x) => x.status === "in_progress").length,
-      overdue: open.filter((x) => days(x) !== null && days(x) < 0).length,
-      dueThisWeek: open.filter((x) => days(x) !== null && days(x) >= 0 && days(x) <= 6).length,
-      upcoming: open
-        .filter((x) => x.dueDate)
-        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-        .slice(0, 6),
+      overdue: dated.filter((x) => days(x) < 0).length,
+      dueThisWeek: dated.filter((x) => days(x) >= 0 && days(x) <= 6).length,
+      nextTwoWeeks: dated.filter((x) => days(x) >= 0 && days(x) <= 13).length,
+      upcoming: dated.slice(0, 6),
       openByProject: open.reduce((m, x) => ((m[x.projectId] = (m[x.projectId] || 0) + 1), m), {}),
     };
   }, [myTasks]);
 
   const loading = myTasks === null;
   const manages = (projects || []).filter((p) => p.role === "admin").length;
+  const now = new Date();
 
   return (
-    <div className="space-y-6">
-      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-2">
-          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-subtle-foreground">
-            <CalendarDays className="size-3.5 text-highlight" aria-hidden="true" />
-            {today()}
-          </span>
-          <h1 className="text-[28px] leading-9 font-semibold tracking-tight sm:text-4xl sm:leading-[44px]">
-            {greeting()}, {displayName(user).split(" ")[0]}
+    <motion.div
+      initial={still ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: EASE }}
+      className="space-y-6"
+    >
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-[28px] leading-9 font-medium sm:text-[32px] sm:leading-10">
+            {now.toLocaleDateString(undefined, { weekday: "long" })}{" "}
+            <span className="text-muted-foreground">{now.toLocaleDateString(undefined, { day: "numeric", month: "long" })}</span>
           </h1>
-          <p className="text-[15px] text-muted-foreground">
-            Here is what needs you today, across{" "}
-            <span className="highlight">
-              {projects ? `${projects.length} project${projects.length === 1 ? "" : "s"}` : "your projects"}
-            </span>
-            .
+          <p className="min-h-6 text-[15px] leading-6 text-subtle-foreground">
+            {projects && !loading && (
+              <>
+                {plural(summary.open.length, "open task")} across {plural(projects.length, "project")}
+                {summary.overdue > 0 && (
+                  <>
+                    {" · "}
+                    <span className="text-danger">{summary.overdue} overdue</span>
+                  </>
+                )}
+              </>
+            )}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="soft" asChild>
-            <Link to="/my-tasks">
-              <ListChecks className="text-highlight" aria-hidden="true" /> My tasks
-            </Link>
-          </Button>
-          <Button variant="solid" asChild>
-            <Link to="/projects?new=1">
-              <Plus aria-hidden="true" /> New project
-            </Link>
-          </Button>
-        </div>
+        {/* The desktop top bar already has New project */}
+        <Button variant="solid" asChild className="self-start md:hidden">
+          <Link to="/projects?new=1">
+            <Plus aria-hidden="true" /> New project
+          </Link>
+        </Button>
       </section>
 
       <PendingInvites onJoined={reloadProjects} />
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <section aria-label="Summary" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Active projects" value={projects?.length} note={projects && `${manages} you manage`} />
         <StatCard
-          index={0}
-          label="Active projects"
-          icon={FolderOpen}
-          tint="blue"
-          value={projects?.length}
-          badge={projects && manages > 0 && <Chip tone="brand">{manages} you manage</Chip>}
-        />
-        <StatCard
-          index={1}
           label="Open tasks"
-          icon={ListTodo}
-          tint="slate"
           value={loading ? null : summary.open.length}
-          badge={!loading && summary.inProgress > 0 && <Chip tone="in_progress">{summary.inProgress} in progress</Chip>}
+          note={!loading && `${summary.inProgress} in progress`}
         />
         <StatCard
-          index={2}
           label="Due this week"
-          icon={AlarmClock}
-          tint="amber"
           value={loading ? null : summary.dueThisWeek}
-          badge={
-            loading ? null : summary.overdue > 0 ? (
-              <Chip tone="danger">{summary.overdue} overdue</Chip>
-            ) : (
-              <Chip tone="success">On track</Chip>
-            )
-          }
+          note={!loading && (summary.overdue > 0 ? `${summary.overdue} overdue` : "None overdue")}
+          noteClass={summary.overdue > 0 && "text-danger"}
         />
         <StatCard
-          index={3}
           label="Completed"
-          icon={CircleCheck}
-          tint="emerald"
           value={loading ? null : summary.done}
-          badge={!loading && summary.total > 0 && <Chip tone="success">{Math.round((summary.done / summary.total) * 100)}%</Chip>}
-          progress={summary.total ? { value: summary.done, max: summary.total } : null}
+          note={
+            !loading &&
+            (summary.total ? `${Math.round((summary.done / summary.total) * 100)}% of ${summary.total} tasks` : "No tasks yet")
+          }
         />
       </section>
 
@@ -141,38 +112,38 @@ export default function Dashboard() {
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-8">
           <Panel
             title="Your projects"
-            icon={FolderOpen}
             action={
-              <Link to="/projects" className="inline-flex items-center gap-1 text-sm font-medium text-highlight hover:underline">
-                View all <ArrowRight className="size-3.5" aria-hidden="true" />
+              <Link to="/projects" className={quietLink}>
+                View all <ArrowRight aria-hidden="true" />
               </Link>
             }
+            className="pb-2 sm:pb-2"
           >
             {projects === null ? (
-              <div className="space-y-2">
+              <div className="space-y-2 pb-4">
                 {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
                 ))}
               </div>
             ) : projects.length === 0 ? (
               <EmptyState
                 icon={FolderOpen}
                 title="No projects yet"
-                className="border-dashed shadow-none"
+                className="mb-4 border-dashed shadow-none"
                 action={
                   <Button variant="solid" asChild>
                     <Link to="/projects?new=1">Create a project</Link>
                   </Button>
                 }
               >
-                Create one and invite your team to start planning together.
+                Create one and invite your team to start planning together
               </EmptyState>
             ) : (
-              <ul className="space-y-2">
-                {projects.slice(0, 5).map(({ project, role }, i) => (
-                  <Reveal as="li" key={project._id} index={i}>
+              <ul className="-mx-5 divide-y divide-border border-t border-border sm:-mx-6">
+                {projects.slice(0, 5).map(({ project, role }) => (
+                  <li key={project._id}>
                     <ProjectRow project={project} role={role} openTasks={summary.openByProject[project._id] || 0} />
-                  </Reveal>
+                  </li>
                 ))}
               </ul>
             )}
@@ -180,29 +151,33 @@ export default function Dashboard() {
 
           <Panel
             title="Upcoming deadlines"
-            icon={AlarmClock}
+            description={
+              !loading &&
+              summary.dated.length > 0 &&
+              `${summary.nextTwoWeeks} in the next two weeks${summary.overdue ? `, ${summary.overdue} overdue` : ""}`
+            }
             action={
-              <Link to="/calendar" className="inline-flex items-center gap-1 text-sm font-medium text-highlight hover:underline">
-                Calendar <ArrowRight className="size-3.5" aria-hidden="true" />
+              <Link to="/calendar" className={quietLink}>
+                Calendar <ArrowRight aria-hidden="true" />
               </Link>
             }
-            className="pb-2 sm:pb-3"
+            className="pb-2 sm:pb-2"
           >
             {loading ? (
-              <div className="space-y-2">
+              <div className="space-y-2 pb-4">
                 {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
                 ))}
               </div>
-            ) : summary.upcoming.length === 0 ? (
-              <p className="pb-3 text-sm text-muted-foreground">
+            ) : summary.dated.length === 0 ? (
+              <p className="pb-4 text-sm text-muted-foreground">
                 None of your open tasks has a deadline. Set one from a task&apos;s panel.
               </p>
             ) : (
-              <ul className="-mx-5 divide-y divide-border sm:-mx-6">
+              <ul className="-mx-5 divide-y divide-border border-t border-border sm:-mx-6">
                 {summary.upcoming.map((t) => (
                   <li key={t._id}>
-                    <TaskRow task={t} showStatus={false} className="sm:px-6" />
+                    <TaskRow task={t} showStatus={false} className="px-5 sm:px-6" />
                   </li>
                 ))}
               </ul>
@@ -213,33 +188,39 @@ export default function Dashboard() {
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-4">
           <Panel
             title="Assigned to you"
-            icon={ListChecks}
-            action={!loading && summary.total > 0 && <Chip tone="success">{summary.done} of {summary.total} done</Chip>}
+            action={
+              !loading &&
+              summary.total > 0 && (
+                <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                  {summary.done} of {summary.total} done
+                </span>
+              )
+            }
+            className={cn(summary.open.length <= 6 && "pb-2 sm:pb-2")}
           >
             {loading ? (
-              <div className="space-y-2">
+              <div className="space-y-2 pb-4">
                 {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-lg" />
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
                 ))}
               </div>
             ) : summary.open.length === 0 ? (
-              <div className="flex flex-col items-center py-6 text-center">
-                <CircleCheck className="size-7 text-status-done" aria-hidden="true" />
-                <p className="mt-2 font-medium">Nothing on your plate</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">When someone assigns you a task, it shows up here.</p>
+              <div className="pb-4">
+                <p className="font-medium">Nothing on your plate</p>
+                <p className="mt-1 text-sm text-muted-foreground">When someone assigns you a task, it shows up here</p>
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="-mx-5 divide-y divide-border border-t border-border sm:-mx-6">
                 {summary.open.slice(0, 6).map((t) => (
                   <li key={t._id}>
                     <Link
                       to={taskHref(t)}
-                      className="group flex items-start gap-3 rounded-lg border border-border bg-secondary/40 p-2.5 transition-colors hover:border-card-edge-hover hover:bg-secondary/80"
+                      className="flex items-start gap-3 px-5 py-3 outline-none transition-colors hover:bg-secondary/60 focus-visible:bg-secondary/60 sm:px-6"
                     >
                       <StatusDot status={t.status} className="mt-1.5" />
                       <div className="min-w-0">
-                        <p className="line-clamp-2 text-[13px] leading-5 font-medium group-hover:text-highlight">{t.title}</p>
-                        <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
+                        <p className="line-clamp-2 text-[13px] leading-5 font-medium">{t.title}</p>
+                        <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                           {t.projectName} · {STATUS_LABEL[t.status]} · {relativeTime(t.updatedAt)}
                         </p>
                       </div>
@@ -255,54 +236,34 @@ export default function Dashboard() {
             )}
           </Panel>
 
-          <Panel title="Your workload" icon={ListTodo} description="Your tasks by status, across every project.">
-            <WorkloadBars tasks={myTasks} />
+          <Panel
+            title="Your workload"
+            action={
+              !loading &&
+              summary.total > 0 && (
+                <span className="font-mono text-xs text-muted-foreground tabular-nums">{plural(summary.total, "task")}</span>
+              )
+            }
+          >
+            <Workload tasks={myTasks} />
           </Panel>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-const TINTS = {
-  blue: "border-blue-100 bg-blue-50 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300",
-  slate: "border-border bg-secondary text-subtle-foreground",
-  amber: "border-amber-100 bg-amber-50 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300",
-  emerald: "border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300",
-};
-
-function StatCard({ index, label, icon: Icon, tint, value, badge, progress }) {
-  const still = useReducedMotion();
+function StatCard({ label, value, note, noteClass }) {
   return (
-    <motion.div
-      initial={still ? false : { opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="surface-card flex flex-col gap-3 p-4 sm:p-5"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="section-label pt-1.5">{label}</span>
-        <span className={cn("grid size-7 shrink-0 place-items-center rounded-lg border", TINTS[tint])}>
-          <Icon className="size-4" aria-hidden="true" />
-        </span>
-      </div>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        {value === undefined || value === null ? (
-          <Skeleton className="h-9 w-12" />
-        ) : (
-          <span className="text-3xl leading-9 font-semibold tracking-tight tabular-nums sm:text-4xl sm:leading-10">{value}</span>
-        )}
-        {badge || null}
-      </div>
-      {progress && (
-        <Progress
-          value={progress.value}
-          max={progress.max}
-          className="h-1 bg-secondary"
-          aria-label={`${progress.value} of ${progress.max} of your tasks done`}
-        />
+    <div className="surface-card p-5 hover:border-border">
+      <p className="text-[13px] leading-5 text-subtle-foreground">{label}</p>
+      {value === undefined || value === null ? (
+        <Skeleton className="mt-2 h-8 w-12" />
+      ) : (
+        <p className="mt-2 text-[32px] leading-8 font-medium tabular-nums">{value}</p>
       )}
-    </motion.div>
+      <p className={cn("mt-2 h-4 truncate font-mono text-xs leading-4 text-muted-foreground", noteClass)}>{note || null}</p>
+    </div>
   );
 }
 
@@ -310,72 +271,80 @@ function ProjectRow({ project, role, openTasks }) {
   return (
     <Link
       to={`/projects/${project._id}`}
-      className="group flex items-start gap-3 rounded-lg border border-border bg-secondary/40 p-3.5 outline-none transition-colors hover:border-card-edge-hover hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:p-4"
+      className="group flex items-center gap-3 px-5 py-3 outline-none transition-colors hover:bg-secondary/60 focus-visible:bg-secondary/60 sm:px-6"
     >
       <ProjectTile name={project.name} />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate font-semibold group-hover:text-highlight">{project.name}</p>
-          <Chip tone={role === "admin" ? "brand" : "default"}>{ROLE_LABEL[role]}</Chip>
-        </div>
-        <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{project.description || "No description yet."}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Users className="size-3.5" aria-hidden="true" />
-            {project.members} member{project.members === 1 ? "" : "s"}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <ListTodo className="size-3.5" aria-hidden="true" />
-            {openTasks ? `${openTasks} of your tasks open` : "Nothing open for you"}
-          </span>
-        </div>
+        <p className="flex items-baseline gap-2">
+          <span className="truncate font-medium">{project.name}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">{ROLE_LABEL[role]}</span>
+        </p>
+        <p className="truncate text-[13px] text-muted-foreground">{project.description || "No description"}</p>
       </div>
-      <ArrowUpRight className="size-4 shrink-0 text-muted-foreground group-hover:text-highlight" aria-hidden="true" />
+      <div className="hidden shrink-0 text-right font-mono text-xs leading-5 text-muted-foreground tabular-nums sm:block">
+        <p className={cn(openTasks > 0 && "text-foreground")} title={`${plural(openTasks, "of your tasks")} open`}>
+          {openTasks} for you
+        </p>
+        <p>{plural(project.members, "member")}</p>
+      </div>
+      <ArrowRight
+        className="size-4 shrink-0 text-muted-foreground transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-foreground"
+        aria-hidden="true"
+      />
     </Link>
   );
 }
 
-/** The first letter of a project in a tinted square, the colour picked from its name. */
+/** The first letter of a project on a quiet square. */
 export function ProjectTile({ name, className }) {
-  const tones = [TINTS.blue, TINTS.emerald, TINTS.amber, "border-violet-100 bg-violet-50 text-violet-600 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300"];
-  const tone = tones[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % tones.length];
   return (
     <span
       aria-hidden="true"
-      className={cn("grid size-10 shrink-0 place-items-center rounded-lg border text-sm font-semibold", tone, className)}
+      className={cn(
+        "grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-secondary font-mono text-xs font-medium text-subtle-foreground",
+        className,
+      )}
     >
       {name.charAt(0).toUpperCase()}
     </span>
   );
 }
 
-function WorkloadBars({ tasks }) {
+const WORKLOAD = [
+  { status: "todo", bar: "bg-status-todo" },
+  { status: "in_progress", bar: "bg-status-progress" },
+  { status: "done", bar: "bg-status-done" },
+];
+
+/** Your tasks by status as one stacked bar, with the counts listed under it. */
+function Workload({ tasks }) {
   if (tasks === null) return <Skeleton className="h-24 w-full rounded-lg" />;
   const total = tasks.length;
-  const rows = [
-    { status: "todo", bar: "bg-status-todo" },
-    { status: "in_progress", bar: "bg-status-progress" },
-    { status: "done", bar: "bg-status-done" },
-  ].map((r) => ({ ...r, count: tasks.filter((t) => t.status === r.status).length }));
-
-  if (total === 0) return <p className="text-sm text-muted-foreground">No tasks assigned to you yet.</p>;
+  if (total === 0) return <p className="text-sm text-muted-foreground">No tasks assigned to you yet</p>;
+  const rows = WORKLOAD.map((r) => ({ ...r, count: tasks.filter((t) => t.status === r.status).length }));
 
   return (
-    <ul className="space-y-3">
-      {rows.map(({ status, bar, count }) => (
-        <li key={status}>
-          <div className="mb-1 flex items-center justify-between text-[13px]">
-            <span className="font-medium">{STATUS_LABEL[status]}</span>
-            <span className="font-mono text-xs text-muted-foreground tabular-nums">
-              {count} / {total}
+    <div className="space-y-4">
+      <div className="flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+        {rows
+          .filter((r) => r.count > 0)
+          .map(({ status, bar, count }) => (
+            <span key={status} className={bar} style={{ flexGrow: count }} />
+          ))}
+      </div>
+      <ul className="space-y-1">
+        {rows.map(({ status, bar, count }) => (
+          <li key={status} className="flex h-7 items-center gap-2.5 text-[13px]">
+            <span aria-hidden="true" className={cn("size-2 rounded-full", bar)} />
+            <span className="flex-1 text-subtle-foreground">{STATUS_LABEL[status]}</span>
+            <span className="font-mono text-xs tabular-nums">{count}</span>
+            <span className="w-10 text-right font-mono text-xs text-muted-foreground tabular-nums">
+              {Math.round((count / total) * 100)}%
             </span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
-            <div className={cn("h-full rounded-full transition-[width] duration-500", bar)} style={{ width: `${(count / total) * 100}%` }} />
-          </div>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -388,18 +357,16 @@ export function ProjectCard({ project, role }) {
     >
       <div className="flex items-start justify-between gap-3">
         <ProjectTile name={project.name} />
-        <Chip tone={role === "admin" ? "brand" : "default"}>{ROLE_LABEL[role]}</Chip>
+        <span className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</span>
       </div>
-      <h3 className="mt-4 text-base leading-snug font-semibold group-hover:text-highlight">{project.name}</h3>
-      <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">{project.description || "No description yet."}</p>
-      <div className="mt-5 flex items-center justify-between border-t border-border pt-3.5 text-xs text-muted-foreground">
+      <h3 className="mt-4 text-base leading-6 font-medium">{project.name}</h3>
+      <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">{project.description || "No description"}</p>
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 font-mono text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <Users className="size-3.5" aria-hidden="true" />
-          {project.members} member{project.members === 1 ? "" : "s"}
+          {plural(project.members, "member")}
         </span>
-        {relativeTime(project.updatedAt) && (
-          <span className="font-mono text-[11px]">Updated {relativeTime(project.updatedAt)}</span>
-        )}
+        {relativeTime(project.updatedAt) && <span>Updated {relativeTime(project.updatedAt)}</span>}
       </div>
     </Link>
   );
