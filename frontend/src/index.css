@@ -235,12 +235,14 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
     font-size: 14px;
-    letter-spacing: -0.005em;
   }
-  h1,
-  h2,
-  h3 {
-    letter-spacing: -0.02em;
+  /* Only large display text is tightened; small text keeps its spacing */
+  h1 {
+    letter-spacing: -0.015em;
+  }
+  /* One stroke for every lucide icon */
+  svg.lucide {
+    stroke-width: 1.5;
   }
   ::selection {
     background: rgb(37 99 235 / 0.2);
