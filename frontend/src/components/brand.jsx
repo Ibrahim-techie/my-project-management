@@ -28,7 +28,7 @@ export function Brand({ to = "/", className }) {
       )}
     >
       <BrandMark />
-      <span className="text-lg font-semibold tracking-tight">CAMP</span>
+      <span className="text-base font-semibold">CAMP</span>
     </Link>
   );
 }
