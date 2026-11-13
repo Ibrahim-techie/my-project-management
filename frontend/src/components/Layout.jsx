@@ -170,9 +170,10 @@ function UserCard({ user, onAccount, onSignOut }) {
 function SideNav({ projects, className }) {
   const linkClass = ({ isActive }) =>
     cn(
-      "group/nav flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-4",
+      "relative flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-4",
       isActive
-        ? "bg-secondary text-foreground [&_svg]:text-highlight"
+        ? // the trail blaze: a short painted bar that marks where you are
+          "bg-secondary text-foreground before:absolute before:top-2 before:left-0 before:h-4 before:w-[3px] before:rounded-full before:bg-highlight [&_svg]:text-foreground"
         : "text-subtle-foreground hover:bg-secondary/70 hover:text-foreground [&_svg]:text-muted-foreground",
     );
 
@@ -202,7 +203,7 @@ function SideNav({ projects, className }) {
                 <NavLink to={`/projects/${project._id}`} className={linkClass}>
                   <span
                     aria-hidden="true"
-                    className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-border bg-elevated font-mono text-[10px] font-medium text-subtle-foreground group-aria-[current=page]/nav:border-highlight/40 group-aria-[current=page]/nav:text-highlight"
+                    className="grid size-4 shrink-0 place-items-center rounded-[4px] border border-border bg-elevated font-mono text-[10px] font-medium text-subtle-foreground"
                   >
                     {project.name.charAt(0).toUpperCase()}
                   </span>
