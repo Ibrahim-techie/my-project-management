@@ -178,44 +178,44 @@
   --priority-low: #2563eb;
 }
 
-/* Dark theme: the same system on midnight navy. Primary actions turn cobalt,
-   since a navy button would disappear against a navy canvas. */
+/* Dark theme: graphite, not navy, so the content carries the colour. The
+   primary action is an off-white from the ramp; cobalt stays the accent. */
 .dark {
-  --background: #0b1120;
-  --sidebar: #0f172a;
-  --card: #131c2e;
-  --elevated: #1a2438;
-  --input-bg: #0f172a;
-  --foreground: #f1f5f9;
-  --subtle-foreground: #a5b4c8;
-  --muted-foreground: #8391a7;
-  --border: #1e293b;
+  --background: #141415;
+  --sidebar: #0f0f10;
+  --card: #19191b;
+  --elevated: #1e1e20;
+  --input-bg: #19191b;
+  --foreground: #ededed;
+  --subtle-foreground: #a1a1a6;
+  --muted-foreground: #85858b;
+  --border: #262628;
 
-  --primary: #2563eb;
-  --primary-hover: #3b82f6;
-  --primary-foreground: #ffffff;
-  --secondary: #1a2438;
-  --muted: #1a2438;
-  --accent: rgb(59 130 246 / 0.14);
+  --primary: #ededed;
+  --primary-hover: #ffffff;
+  --primary-foreground: #141415;
+  --secondary: #232325;
+  --muted: #232325;
+  --accent: rgb(96 165 250 / 0.12);
   --accent-foreground: #93c5fd;
-  --destructive: #f87171;
-  --danger: #f87171;
-  --warning: #fbbf24;
-  --input: #334155;
+  --destructive: #e5484d;
+  --danger: #e5484d;
+  --warning: #e8a33d;
+  --input: #38383b;
   --ring: #60a5fa;
   --brand: #60a5fa;
   --highlight: #60a5fa;
-  --card-edge-hover: #334155;
-  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-pop: 0 8px 16px -4px rgb(0 0 0 / 0.5);
+  --card-edge-hover: #38383b;
+  --shadow-card: none;
+  --shadow-pop: 0 8px 24px -4px rgb(0 0 0 / 0.5);
 
-  --status-todo: #94a3b8;
+  --status-todo: #8e8e94;
   --status-progress: #60a5fa;
   --status-review: #a78bfa;
-  --status-done: #34d399;
-  --status-blocked: #f87171;
-  --priority-high: #f87171;
-  --priority-medium: #fbbf24;
+  --status-done: #4cc38a;
+  --status-blocked: #e5484d;
+  --priority-high: #e5484d;
+  --priority-medium: #e8a33d;
   --priority-low: #60a5fa;
 }
 
