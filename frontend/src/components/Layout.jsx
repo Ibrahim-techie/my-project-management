@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/projects", label: "Projects", icon: FolderOpen, end: true },
-  { to: "/my-tasks", label: "My Tasks", icon: CircleCheck },
+  { to: "/my-tasks", label: "My tasks", icon: CircleCheck },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
