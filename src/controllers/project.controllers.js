@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Project from "../models/project.models.js";
 import asynchandler from "../utils/asynchandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -9,6 +10,7 @@ import Task from "../models/task.models.js";
 import SubTask from "../models/subtask.models.js";
 import Note from "../models/note.model.js";
 import ProjectInvite from "../models/projectinvite.models.js";
+import { releaseMemberLock, tryAcquireMemberLock } from "../models/projectmemberlock.models.js";
 import User from "../models/user.models.js";
 import {
   appLinkFor,
@@ -25,6 +27,67 @@ import {
   emitToUser,
   removeUserFromProject,
 } from "../socket/index.js";
+
+// ---------- last-admin protection ----------
+//
+// Only admins can manage members and invites or edit and delete the project;
+// project admins are limited to tasks (see routes/project.route.js). So every
+// project must keep at least one admin, and the two ways to lose one, removing
+// a member and changing a role, run their checks and their write inside
+// withMemberLock, where no other such change to the project can interleave.
+
+const MEMBER_LOCK_WAIT_MS = 5_000;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Runs `fn` holding the project's member lock, waiting briefly for a concurrent change to finish */
+const withMemberLock = async (projectId, fn) => {
+  const token = randomUUID();
+  const giveUpAt = Date.now() + MEMBER_LOCK_WAIT_MS;
+  while (!(await tryAcquireMemberLock(projectId, token))) {
+    if (Date.now() >= giveUpAt) {
+      throw new ApiError(409, "Another change to this project's members is in progress. Please try again.");
+    }
+    await sleep(25 + Math.random() * 75);
+  }
+  try {
+    return await fn();
+  } finally {
+    await releaseMemberLock(projectId, token).catch((error) => {
+      // the lease runs out on its own and the next request takes it over
+      console.error(`[members] could not release the member lock of project ${projectId}:`, error.message);
+    });
+  }
+};
+
+const assertValidUserId = (userId) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) throw new ApiError(400, "Invalid User ID");
+};
+
+// roleProjectPermission checked the caller before the lock was taken, and a
+// concurrent request may have removed or demoted them since. Same rules and
+// messages as the middleware.
+const assertCallerIsAdmin = async (projectId, callerId) => {
+  const caller = await ProjectMember.findOne({ project: projectId, user: callerId }).select("role").lean();
+  if (!caller) throw new ApiError(403, "You are not a member of this project");
+  if (caller.role !== UserRolesEnum.ADMIN) {
+    throw new ApiError(403, "You do not have permission to perform this action");
+  }
+};
+
+const assertNotLastAdmin = async (projectId, userId, action) => {
+  const anotherAdmin = await ProjectMember.exists({
+    project: projectId,
+    user: { $ne: userId },
+    role: UserRolesEnum.ADMIN,
+  });
+  if (!anotherAdmin) {
+    throw new ApiError(
+      400,
+      `You can't ${action} the project's only admin. Make another member an admin first.`,
+      [{ reason: "last_admin" }],
+    );
+  }
+};
 
 const getProjects = asynchandler(async (req, res) => {
   const projects = await ProjectMember.aggregate([
@@ -203,21 +266,35 @@ const updateProjectMemberRoles = asynchandler(async (req, res) => {
   if (!AvailableUserRole.includes(newRole)) {
     throw new ApiError(400, "Invalid ROle");
   }
-  // only an actual change is worth an email
-  const before = await ProjectMember.findOne({ project: projectId, user: userId }).select("role").lean();
+  assertValidUserId(userId);
 
-  const projectMember = await ProjectMember.findOneAndUpdate(
-    {
-      project: new mongoose.Types.ObjectId(projectId),
-      user: new mongoose.Types.ObjectId(userId),
-    },
-    { role: newRole },
-    { new: true }, // returns the updated document
-  );
+  const { before, projectMember } = await withMemberLock(projectId, async () => {
+    await assertCallerIsAdmin(projectId, req.user._id);
 
-  if (!projectMember) {
-    throw new ApiError(404, "Project Member not found");
-  }
+    // only an actual change is worth an email
+    const before = await ProjectMember.findOne({ project: projectId, user: userId }).select("role").lean();
+    if (!before) {
+      throw new ApiError(404, "Project Member not found");
+    }
+
+    if (before.role === UserRolesEnum.ADMIN && newRole !== UserRolesEnum.ADMIN) {
+      await assertNotLastAdmin(projectId, userId, "demote");
+    }
+
+    const projectMember = await ProjectMember.findOneAndUpdate(
+      {
+        project: new mongoose.Types.ObjectId(projectId),
+        user: new mongoose.Types.ObjectId(userId),
+      },
+      { role: newRole },
+      { new: true }, // returns the updated document
+    );
+
+    if (!projectMember) {
+      throw new ApiError(404, "Project Member not found");
+    }
+    return { before, projectMember };
+  });
 
   const payload = { projectId, userId, role: projectMember.role };
   emitToProject(projectId, "member:role-updated", payload);
@@ -246,15 +323,29 @@ const updateProjectMemberRoles = asynchandler(async (req, res) => {
 
 const deleteProjectMember = asynchandler(async (req, res) => {
   const { projectId, userId } = req.params;
+  assertValidUserId(userId);
 
-  const projectMember = await ProjectMember.findOneAndDelete({
-    project: new mongoose.Types.ObjectId(projectId),
-    user: new mongoose.Types.ObjectId(userId),
+  await withMemberLock(projectId, async () => {
+    await assertCallerIsAdmin(projectId, req.user._id);
+
+    const member = await ProjectMember.findOne({ project: projectId, user: userId }).select("role").lean();
+    if (!member) {
+      throw new ApiError(404, "Project Member not found");
+    }
+
+    if (member.role === UserRolesEnum.ADMIN) {
+      await assertNotLastAdmin(projectId, userId, "remove");
+    }
+
+    const projectMember = await ProjectMember.findOneAndDelete({
+      project: new mongoose.Types.ObjectId(projectId),
+      user: new mongoose.Types.ObjectId(userId),
+    });
+
+    if (!projectMember) {
+      throw new ApiError(404, "Project Member not found");
+    }
   });
-
-  if (!projectMember) {
-    throw new ApiError(404, "Project Member not found");
-  }
 
   // Pull their sockets out of the room first so they miss this and later events
   removeUserFromProject(projectId, userId);
