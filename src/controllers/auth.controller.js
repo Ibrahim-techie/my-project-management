@@ -15,6 +15,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiErrors.js";
 import jwt from "jsonwebtoken";
 import { disconnectUser } from "../socket/index.js";
+import { normalizeUserName } from "../utils/username.js";
 
 const authCookieOptions = {
   httpOnly: true,
@@ -72,6 +73,25 @@ const verificationLinkFor = (token) => {
   return `${frontendUrl}/verify-email/${encodeURIComponent(token)}`;
 };
 
+// A 409 that says which field is already registered, so the form can point
+// at it; `reason` is machine-readable, like the other business errors
+const registrationConflict = (field) => {
+  if (field === "userName") {
+    return new APIError(409, "This username is already taken. Please choose another one.", [
+      { reason: "username_taken" },
+    ]);
+  }
+  if (field === "email") {
+    return new APIError(409, "An account with this email already exists.", [{ reason: "email_taken" }]);
+  }
+  return new APIError(409, "User with this email or userName already exists", []);
+};
+
+// The field behind a duplicate-key (E11000) error, e.g. "userName"
+const duplicateKeyField = (error) =>
+  Object.keys(error.keyPattern ?? error.keyValue ?? {})[0] ??
+  /index: (\w+)_1\b/.exec(error.message ?? "")?.[1];
+
 const registerUser = asynchandler(async (req, res) => {
   const { userName, email, password, fullName } = req.body;
 
@@ -87,27 +107,33 @@ const registerUser = asynchandler(async (req, res) => {
 
   const existingUser = await User.findOne({
     $or: [{ email }, { userName }],
-  });
+  })
+    .select("userName email")
+    .lean();
 
   // If user exists, return an error
 
   if (existingUser) {
-    throw new APIError(
-      409,
-      "User with this email or userName already exists",
-      [],
-    );
+    throw registrationConflict(existingUser.userName === normalizeUserName(userName) ? "userName" : "email");
   }
 
-  // Create a new user
+  // Create a new user. A concurrent registration can still get past the check
+  // above first; the unique indexes on userName and email are what actually
+  // keep them unique, so a duplicate-key error is the same 409.
 
-  const newUser = await User.create({
-    userName,
-    email,
-    fullName,
-    password,
-    isEmailVerified: false,
-  });
+  let newUser;
+  try {
+    newUser = await User.create({
+      userName,
+      email,
+      fullName,
+      password,
+      isEmailVerified: false,
+    });
+  } catch (error) {
+    if (error?.code === 11000) throw registrationConflict(duplicateKeyField(error));
+    throw error;
+  }
 
   // Generate a temproray Token for email verification
 
