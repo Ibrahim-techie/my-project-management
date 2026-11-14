@@ -49,3 +49,4 @@ postman/project-management-auth.postman_collection.json
 PRD.md
 .claude/launch.json
 
+.env.testing
