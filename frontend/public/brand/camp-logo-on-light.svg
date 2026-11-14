@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1208.01 512" width="1208" height="512">
+  <title>CAMP</title>
+  <defs>
+    <linearGradient id="cl-tile" x1="0" y1="0" x2=".55" y2="1">
+      <stop offset="0" stop-color="#10305f"/>
+      <stop offset=".55" stop-color="#072049"/>
+      <stop offset="1" stop-color="#031330"/>
+    </linearGradient>
+    <linearGradient id="cl-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fa6e6" stop-opacity=".38"/>
+      <stop offset=".5" stop-color="#7fa6e6" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#7fa6e6" stop-opacity=".05"/>
+    </linearGradient>
+    <linearGradient id="cl-c" x1="0" y1="47" x2="0" y2="493" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".5" stop-color="#f1f7fe"/>
+      <stop offset=".78" stop-color="#d3e6fb"/>
+      <stop offset="1" stop-color="#a2caf4"/>
+    </linearGradient>
+    <linearGradient id="cl-tail" x1="320" y1="410" x2="440" y2="490" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2aa9ff"/>
+      <stop offset="1" stop-color="#0757ec"/>
+    </linearGradient>
+    <linearGradient id="cl-blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1786fd"/>
+      <stop offset="1" stop-color="#0457dd"/>
+    </linearGradient>
+    <linearGradient id="cl-amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fec93a"/>
+      <stop offset="1" stop-color="#eea81b"/>
+    </linearGradient>
+    <linearGradient id="cl-teal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0cc9a3"/>
+      <stop offset="1" stop-color="#03a78a"/>
+    </linearGradient>
+    <clipPath id="cl-c-shape">
+      <path d="M432.35 136.1 A10 10 0 0 0 433.52 121.68 A223 223 0 1 0 460.42 380.98 A10 10 0 0 0 451.75 366 H377.46 A4 4 0 0 0 374.49 367.32 A145 145 0 1 1 375.97 174.34 A6 6 0 0 0 384.26 175.05 Z"/>
+    </clipPath>
+  </defs>
+  <!-- tile -->
+  <rect width="512" height="512" rx="114" fill="url(#cl-tile)"/>
+  <rect x="1.5" y="1.5" width="509" height="509" rx="112.5" fill="none" stroke="url(#cl-rim)" stroke-width="3"/>
+  <!-- the C, white fading to light blue, with a light-blue inner rim and a vivid
+       blue tail (its outline is repeated in the clip path above) -->
+  <path d="M432.35 136.1 A10 10 0 0 0 433.52 121.68 A223 223 0 1 0 460.42 380.98 A10 10 0 0 0 451.75 366 H377.46 A4 4 0 0 0 374.49 367.32 A145 145 0 1 1 375.97 174.34 A6 6 0 0 0 384.26 175.05 Z" fill="url(#cl-c)"/>
+  <g clip-path="url(#cl-c-shape)">
+    <circle cx="267" cy="270" r="145" fill="none" stroke="#8fc0f3" stroke-width="15"/>
+    <path d="M360 345L345 385Q300 482 240 500V530H530V330Z" fill="url(#cl-tail)"/>
+  </g>
+  <!-- three task columns: blue, amber, teal -->
+  <g>
+    <rect x="163" y="188" width="75" height="173" rx="15" fill="url(#cl-blue)"/>
+    <rect x="248" y="188" width="75" height="173" rx="15" fill="url(#cl-amber)"/>
+    <rect x="333" y="188" width="75" height="173" rx="15" fill="url(#cl-teal)"/>
+    <rect x="175.5" y="232" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.78"/>
+    <rect x="175.5" y="265" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.6"/>
+    <rect x="175.5" y="298" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.45"/>
+    <rect x="260.5" y="232" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.78"/>
+    <rect x="260.5" y="265" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.6"/>
+    <rect x="260.5" y="298" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.45"/>
+    <rect x="345.5" y="232" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.78"/>
+    <rect x="345.5" y="265" width="50" height="18" rx="9" fill="#fff" fill-opacity="0.6"/>
+    <path d="M346.5 317.5 362 331.5 394 303" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- wordmark -->
+  <path transform="translate(569.34 173.06) scale(1.66)" fill="#072049" fill-rule="evenodd" d="M91.6 36A46.5 50 0 1 0 91.6 64H71.4A27.2 31.5 0 1 1 71.4 36ZM95.4 98.4 131.2 2.1H149.9L185.7 98.4H166.4L159.1 78.6H122L114.7 98.4ZM140.55 28.9 128.6 60.9H152.5ZM195.5 98.4V2.1H213.9L245.1 70 276.3 2.1H294.7V98.4H276.2V42.6L250.6 98.4H239.6L214 42.6V98.4ZM314.8 98.4V2.1H352.3A32.5 32.5 0 0 1 352.3 67.1H334.2V98.4ZM334.2 20.6V48.6H352.3A14 14 0 0 0 352.3 20.6Z"/>
+</svg>
