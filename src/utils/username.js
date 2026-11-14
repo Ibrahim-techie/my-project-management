@@ -1,6 +1,8 @@
 /*
  * Username rules, in one place. Registration (validators/index.js) and the
- * availability check (GET /auth/check-username) both use them.
+ * availability check (GET /auth/check-username) both use them, and
+ * frontend/src/lib/username-rules.js mirrors them so the form can answer
+ * instantly. Keep the two files in step.
  *
  * A username is stored trimmed and lowercase (the User schema also trims and
  * lowercases on write) and is 3 to 20 characters long. There is no character
