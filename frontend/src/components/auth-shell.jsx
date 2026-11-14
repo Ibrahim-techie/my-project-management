@@ -58,14 +58,14 @@ export function AuthShell({
           aria-label="About CAMP"
           className="relative hidden overflow-hidden bg-[#0f172a] lg:flex lg:flex-col lg:justify-end">
           <img
-            src="/brand/auth-hero.webp"
+            src="/brand/camp-hero.svg"
             alt=""
             aria-hidden="true"
             decoding="async"
-            className="absolute inset-0 size-full object-cover opacity-80" />
+            className="absolute inset-0  object-cover opacity-90" />
           <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-[#0b1120] via-[#0b1120]/55 to-transparent" />
-          <div className="relative space-y-3 p-10 xl:p-14">
-            <p className="section-label text-slate-400">Built for project teams</p>
+          <div className="relative space-y-3 p-10 xl:p-14  ">
+            <p className="section-label text-slate-200 text-xl text-right underline">Built for project teams</p>
             {FEATURES.map(({ icon: Icon, title: t, body }) => (
               <div
                 key={t}
