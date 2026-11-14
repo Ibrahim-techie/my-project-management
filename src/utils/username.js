@@ -1,5 +1,6 @@
 /*
- * Username rules, in one place. Registration (validators/index.js) uses them.
+ * Username rules, in one place. Registration (validators/index.js) and the
+ * availability check (GET /auth/check-username) both use them.
  *
  * A username is stored trimmed and lowercase (the User schema also trims and
  * lowercases on write) and is 3 to 20 characters long. There is no character
@@ -7,6 +8,9 @@
  */
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 20;
+
+/** How many free alternatives the availability check offers for a taken name */
+export const USERNAME_SUGGESTION_LIMIT = 4;
 
 /** Trim and lowercase: the form usernames are stored and compared in */
 export const normalizeUserName = (value) => String(value ?? "").trim().toLowerCase();

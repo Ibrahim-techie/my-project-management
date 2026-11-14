@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeOldPassword,
+  checkUsernameAvailability,
   forgotPassword,
   getCurrentUser,
   loginUser,
@@ -13,7 +14,9 @@ import {
 } from "../controllers/auth.controller.js";
 
 import validateRequest from "../middlewares/validator.middleware.js";
+import rateLimit from "../middlewares/ratelimit.middleware.js";
 import {
+  checkUsernameValidator,
   userRegisterValidator,
   userLoginValidator,
   userforgotPasswordValidator,
@@ -30,6 +33,18 @@ const router = Router();
 router
   .route("/register")
   .post(userRegisterValidator(), validateRequest, registerUser);
+
+// Public, so without a limit a script could walk through usernames. 60 a
+// minute is plenty for someone typing: the form waits 400 ms after each key.
+const usernameCheckLimit = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  message: "Too many username checks. Please wait a minute and try again.",
+});
+
+router
+  .route("/check-username")
+  .get(usernameCheckLimit, checkUsernameValidator(), validateRequest, checkUsernameAvailability);
 
 router.route("/login").post(userLoginValidator(), validateRequest, loginUser);
 

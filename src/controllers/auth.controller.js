@@ -15,7 +15,11 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiErrors.js";
 import jwt from "jsonwebtoken";
 import { disconnectUser } from "../socket/index.js";
-import { normalizeUserName } from "../utils/username.js";
+import {
+  USERNAME_SUGGESTION_LIMIT,
+  normalizeUserName,
+  userNameSuggestionCandidates,
+} from "../utils/username.js";
 
 const authCookieOptions = {
   httpOnly: true,
@@ -194,6 +198,39 @@ const registerUser = asynchandler(async (req, res) => {
         "User registered successfully and email verification initiated",
         createdUser,
       ),
+    );
+});
+
+// The first few suggestion candidates nobody has, from one indexed $in query
+const freeUserNameSuggestions = async (userName) => {
+  const candidates = userNameSuggestionCandidates(userName);
+  if (candidates.length === 0) return [];
+  const taken = new Set(await User.distinct("userName", { userName: { $in: candidates } }));
+  return candidates.filter((candidate) => !taken.has(candidate)).slice(0, USERNAME_SUGGESTION_LIMIT);
+};
+
+/**
+ * GET /auth/check-username?userName= (public, rate limited)
+ * Whether a username is free, with a few free alternatives when it isn't.
+ * The reply is the same whoever holds a name: it never identifies an account.
+ * Registration still enforces uniqueness itself; this is a hint for the form.
+ */
+const checkUsernameAvailability = asynchandler(async (req, res) => {
+  const userName = normalizeUserName(req.query.userName);
+
+  // userName has a unique index, so this is a single index lookup
+  const taken = Boolean(await User.exists({ userName }));
+  const suggestions = taken ? await freeUserNameSuggestions(userName) : [];
+
+  return res
+    .status(200)
+    .set("Cache-Control", "no-store")
+    .json(
+      new ApiResponse(200, taken ? "Username is already taken" : "Username is available", {
+        userName,
+        available: !taken,
+        suggestions,
+      }),
     );
 });
 
@@ -572,6 +609,7 @@ export {
   authCookieOptions,
   generateAccessAndRefreshTokens,
   registerUser,
+  checkUsernameAvailability,
   loginUser,
   verifyEmail,
   logoutUser,

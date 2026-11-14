@@ -1,7 +1,7 @@
 import pkg from "express-validator";
 import { AvailableUserRole, AvailableTaskStatus } from "../utils/constants.js";
 import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "../utils/username.js";
-const { body, param } = pkg;
+const { body, param, query } = pkg;
 
 const USERNAME_LENGTH_MESSAGE = `Username must be between ${USERNAME_MIN_LENGTH} and ${USERNAME_MAX_LENGTH} characters`;
 
@@ -33,6 +33,25 @@ const userRegisterValidator = () => {
     body("fullName").trim().notEmpty().withMessage("Full name is required"),
   ];
 };
+
+// GET /auth/check-username: the registration rules, after trimming and
+// lowercasing (registration itself expects the form to send lowercase)
+const checkUsernameValidator = () => [
+  query("userName")
+    .exists()
+    .withMessage("Username is required")
+    .bail()
+    .custom((value) => typeof value === "string")
+    .withMessage("Username must be a single value")
+    .bail()
+    .trim()
+    .toLowerCase()
+    .notEmpty()
+    .withMessage("Username is required")
+    .bail()
+    .isLength({ min: USERNAME_MIN_LENGTH, max: USERNAME_MAX_LENGTH })
+    .withMessage(USERNAME_LENGTH_MESSAGE),
+];
 
 const userLoginValidator = () => {
   return [
@@ -359,6 +378,7 @@ const updateNoteValidator = () => [
 export {
   userLoginValidator,
   userRegisterValidator,
+  checkUsernameValidator,
   userChangeCurrentPasswordValidator,
   userforgotPasswordValidator,
   userResetPasswordValidator,
