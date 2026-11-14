@@ -1,6 +1,9 @@
 import pkg from "express-validator";
 import { AvailableUserRole, AvailableTaskStatus } from "../utils/constants.js";
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "../utils/username.js";
 const { body, param } = pkg;
+
+const USERNAME_LENGTH_MESSAGE = `Username must be between ${USERNAME_MIN_LENGTH} and ${USERNAME_MAX_LENGTH} characters`;
 
 const userRegisterValidator = () => {
   return [
@@ -17,8 +20,8 @@ const userRegisterValidator = () => {
       .withMessage("Username is required")
       .isLowercase()
       .withMessage("Username must be in lowercase")
-      .isLength({ min: 3, max: 20 })
-      .withMessage("Username must be between 3 and 20 characters"),
+      .isLength({ min: USERNAME_MIN_LENGTH, max: USERNAME_MAX_LENGTH })
+      .withMessage(USERNAME_LENGTH_MESSAGE),
 
     body("password")
       .trim()
