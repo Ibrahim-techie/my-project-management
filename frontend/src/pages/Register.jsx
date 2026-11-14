@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MailCheck } from "lucide-react";
 import { ResendVerification } from "@/components/resend-verification";
+import { UsernameField } from "@/components/username-field";
+import { USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from "@/lib/username-rules";
+import { useUsernameAvailability } from "@/lib/use-username-availability";
 import { api, errMsg } from "../api";
 import { oauthStartUrl, useOAuthProviders } from "../auth.jsx";
 import {
@@ -19,11 +22,39 @@ export default function Register() {
   const [form, setForm] = useState({ fullName: "", userName: "", email: "", password: "" });
   const [sentTo, setSentTo] = useState("");
   const providers = useOAuthProviders();
+  const username = useUsernameAvailability(form.userName);
+  const userNameInput = useRef(null);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const pickUserName = (userName) => {
+    setForm({ ...form, userName });
+    username.checkNow(userName);
+    userNameInput.current?.focus();
+  };
+
   const { busy, error, run } = useAuthSubmit(async () => {
+    // The field already shows these; don't send a registration bound to fail
+    const blocked =
+      username.status === "taken"
+        ? `“${username.value}” is already taken. Pick another username.`
+        : username.status === "invalid"
+          ? username.code === "rejected"
+            ? username.message
+            : `Username must be between ${USERNAME_MIN_LENGTH} and ${USERNAME_MAX_LENGTH} characters.`
+          : null;
+    if (blocked) {
+      userNameInput.current?.focus();
+      return blocked;
+    }
     try {
       await api.post("/auth/register", form);
     } catch (e) {
+      // Someone registered this name after it was checked: say so, and check again for suggestions
+      if (e.response?.status === 409 && e.response.data?.errors?.[0]?.reason === "username_taken") {
+        username.recheck();
+        userNameInput.current?.focus();
+        return "Someone just took that username. Pick another one.";
+      }
       return errMsg(e);
     }
   });
@@ -70,9 +101,13 @@ export default function Register() {
             <Field label="Full name">
               <TextInput value={form.fullName} onChange={set("fullName")} autoComplete="name" required autoFocus />
             </Field>
-            <Field label="Username" hint="Lowercase, used when teammates add you">
-              <TextInput value={form.userName} onChange={set("userName")} autoComplete="username" required />
-            </Field>
+            <UsernameField
+              value={form.userName}
+              onChange={(userName) => setForm({ ...form, userName })}
+              availability={username}
+              onPick={pickUserName}
+              inputRef={userNameInput}
+            />
           </div>
           <Field label="Email">
             <TextInput type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
