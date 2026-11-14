@@ -28,3 +28,46 @@ export const isValidUserName = (value) => {
   return length >= USERNAME_MIN_LENGTH && length <= USERNAME_MAX_LENGTH;
 };
 
+// Readable variations first, then numbered ones, in the order they are offered
+const SUGGESTION_PATTERNS = [
+  { suffix: "_dev" },
+  { suffix: "01" },
+  { prefix: "the" },
+  { suffix: "codes" },
+  // 02 to 30
+  ...Array.from({ length: 29 }, (_, i) => ({ suffix: String(i + 2).padStart(2, "0") })),
+];
+
+// "ibrahim_dev" shouldn't become "ibrahim_dev_dev", nor "theo" "thetheo"
+const alreadyHas = (base, { prefix, suffix }) =>
+  (prefix && base.startsWith(prefix)) || (suffix && /\D/.test(suffix) && base.endsWith(suffix));
+
+// prefix + base + suffix, with the base shortened by whole characters so the
+// result fits the length limit
+const fit = (base, { prefix = "", suffix = "" }) => {
+  const room = USERNAME_MAX_LENGTH - userNameLength(prefix) - userNameLength(suffix);
+  const cut = Array.from(base).slice(0, room).join("");
+  // no "ibrahim_" + "_dev" doubling, and no dangling space before a suffix
+  const stem = suffix ? cut.replace(/[\s._-]+$/u, "") : cut;
+  return stem ? normalizeUserName(`${prefix}${stem}${suffix}`) : "";
+};
+
+/**
+ * Alternatives for a taken username, best first: name_dev, name01, thename,
+ * namecodes, then name02 to name30. Each is normalized, valid, unique and
+ * different from `base`, and fits the length limit. Deterministic: whether
+ * they are free is for the caller to check.
+ */
+export const userNameSuggestionCandidates = (base) => {
+  const seen = new Set([base]);
+  const candidates = [];
+  for (const pattern of SUGGESTION_PATTERNS) {
+    if (alreadyHas(base, pattern)) continue;
+    const candidate = fit(base, pattern);
+    if (candidate && !seen.has(candidate) && isValidUserName(candidate)) {
+      seen.add(candidate);
+      candidates.push(candidate);
+    }
+  }
+  return candidates;
+};
