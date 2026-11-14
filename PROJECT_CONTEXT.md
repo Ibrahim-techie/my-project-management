@@ -2,7 +2,7 @@
 
 > **Purpose of this document:** a complete, self-contained description of the existing CAMP codebase (architecture, data model, every API endpoint, real-time events, emails, frontend structure, conventions and known gaps) so an AI assistant or a new developer can understand the system and propose new features or improvements that fit it.
 >
-> - **Last updated:** 2026-11-14. **Code baseline:** commit `896d52c` on `main` (`fix(projects): prevent removal or demotion of last admin`), the latest commit that changes code under `src/` or `frontend/`.
+> - **Last updated:** 2026-11-14. **Code baseline:** commit `e5651ff` (`feat(register): live username availability on sign-up`), the latest commit that changes code under `src/` or `frontend/`.
 > - Source of truth: everything here was read from the code. The repo also has an older `PRD.md` (gitignored) whose route names are **outdated** (`/projects`, `/tasks`, `/t/:taskId`). Use the routes in this document.
 > - Language: JavaScript (ES modules) end to end. No TypeScript.
 > - **Living document:** update the relevant section (not a new appendix) after every meaningful change: features or modules, endpoints or responses, models, indexes or relationships, auth, authorization or security, architecture decisions, env vars or deployment, important fixes and known limitations, and testing. Remove obsolete statements, verify against the code and the git diff, and bump the date and commit above. Only reference commits that already exist: name the commit that contains the documented code, never a hash that hasn't been created yet. This file is tracked in git.
@@ -10,6 +10,8 @@
 > **Document history**
 > - 2026-11-14: first full snapshot, from `78b1c47`.
 > - 2026-11-14: last-admin protection and the per-project member lock, as committed in `896d52c` (§6.8, §7.5, §8.2); testing rules and verification log (new §18); the `.env.local` testing config (§13). The temporary test runner was deleted after verification.
+> - 2026-11-14: live username availability on sign-up: `GET /auth/check-username` with suggestions and a rate limit, field-specific registration 409s including the E11000 race (§7.6, §8.1, §12.4, §16, §18). Committed as `f16a22b` to `e5651ff`.
+> - 2026-11-14: the auth pages' hero artwork is now `camp-hero.svg` (`d25698d`), and `*.pid` lock files are ignored (`1a8d425`).
 
 ---
 
@@ -47,7 +49,7 @@
 - **My tasks.** Everything assigned to you across all projects, grouped by due date (Overdue, Today, This week, Later, No due date, Completed).
 - **Calendar.** A month grid of task deadlines across projects, filterable by project and by "everyone / mine", plus lists of the next seven days and overdue items.
 - **Live updates.** Boards, panels, notes and member lists update in real time over Socket.IO; removed members lose access immediately.
-- **Sign-in.** Email/username + password, or Google / GitHub OAuth.
+- **Sign-in.** Email/username + password, or Google / GitHub OAuth. Sign-up checks username availability as you type and suggests free alternatives when a name is taken.
 - **Email.** Verification, password reset, invites, assignment, deadline changes, subtask added, hourly deadline-reminder digests, role changes, removals, project deletion and password-change notices.
 - **Light and dark themes.**
 
@@ -143,7 +145,7 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
 │   │   ├── reminder.routes.js      # /reminders (external cron trigger; handler is inline)
 │   │   └── healthcheck.routes.js   # /healthcheck
 │   ├── controllers/                # request handlers (business logic lives here; no service layer)
-│   │   ├── auth.controller.js      # register, login, logout, refresh, verify, resend, forgot/reset/change password
+│   │   ├── auth.controller.js      # register (field-specific 409s), check-username, login, logout, refresh, verify, resend, forgot/reset/change password
 │   │   ├── oauth.controller.js     # Google/GitHub OAuth 2.0 authorization-code flow
 │   │   ├── project.controllers.js  # project CRUD, member list/role/remove (last-admin guard + member lock), cascade delete
 │   │   ├── invite.controllers.js   # create/list/resend/revoke invites; accept/decline by id or token
@@ -157,6 +159,7 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
 │   │   ├── auth.middleware.js      # verifyJWT: cookie or Bearer access token → req.user
 │   │   ├── rolepermission.middleware.js # roleProjectPermission(roles): membership + role check → req.user.role
 │   │   ├── validator.middleware.js # validateRequest: express-validator result → 422 ApiError
+│   │   ├── ratelimit.middleware.js # rateLimit(): small in-memory fixed-window limiter → 429 + Retry-After (§7.6)
 │   │   └── multer.middleware.js    # `upload`: Cloudinary storage, jpg/jpeg/png/webp, 5 MB/file
 │   ├── validators/
 │   │   └── index.js                # every express-validator chain (auth, project, member, task, subtask, note)
@@ -170,6 +173,7 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
 │       ├── asynchandler.js         # wraps async handlers → next(err)
 │       ├── constants.js            # UserRolesEnum, TaskStatusEnum (+ Available* arrays)
 │       ├── mail.js                 # Mailgen generator + all email content builders
+│       ├── username.js             # username rules, normalization, suggestion candidates (mirrored in the frontend, §7.6)
 │       └── test-email.js           # CLI: npm run mail:test [-- address | --verify]
 │
 └── frontend/                       # ───────── React SPA ─────────
@@ -180,7 +184,7 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
     ├── jsconfig.json               # "@/*" path alias
     ├── eslint.config.js
     ├── index.html                  # favicons, inline theme bootstrap script (localStorage "camp-theme")
-    ├── public/brand/               # logos (svg), favicons, apple-touch-icon, auth-hero.webp
+    ├── public/brand/               # logos (svg), favicons, apple-touch-icon, camp-hero.svg (auth pages' hero; auth-hero.webp is no longer used)
     └── src/
         ├── main.jsx                # provider tree (Theme → Toast → Tooltip → Router → Auth → Socket → ErrorBoundary → App)
         ├── App.jsx                 # route table
@@ -192,6 +196,9 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
         │   ├── format.js           # labels, displayName, initials, dates (UTC day handling), dueInfo, taskHref, assignee helpers
         │   ├── use-tasks.js        # useMyTasks / useAllTasks: fan out one request per project
         │   ├── use-hotkey.js       # single-key shortcuts (ignored while typing or when a dialog is open)
+        │   ├── username-rules.js   # the API's username rules, mirrored for instant feedback
+        │   ├── username-check.js   # framework-free debounced, race-safe availability checker (§7.6)
+        │   ├── use-username-availability.js # hook wrapping the checker with GET /auth/check-username
         │   └── utils.js            # cn()
         ├── pages/
         │   ├── Login.jsx, Register.jsx, ForgotPassword.jsx, ResetPassword.jsx, VerifyEmail.jsx
@@ -208,6 +215,7 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
             ├── pending-invites.jsx # invites list on the dashboard
             ├── project-jump.jsx    # top-bar project search (Cmd/Ctrl+K)
             ├── user-picker.jsx     # username autocomplete for invites (/users/search)
+            ├── username-field.jsx  # sign-up username input: live availability status + suggestions
             ├── auth-shell.jsx      # auth page layout, inputs, OAuth buttons, oauthErrorMessage, useAuthSubmit
             ├── resend-verification.jsx, due-date.jsx (DueChip, DueText, DuePicker), task-row.jsx (StatusDot, TaskRow)
             ├── page.jsx (PageTitle, Panel, EmptyState…), brand.jsx, reveal.jsx, search-field.jsx
@@ -330,7 +338,7 @@ Error (`ApiError` through the global handler):
 ```
 
 - Validation errors: `errors` is an array of `{ [fieldPath]: message }` objects.
-- Some business errors carry machine-readable reasons, e.g. invites: `errors: [{ reason: "expired" | "revoked" | "accepted" | "declined" | "gone" | "wrong_account", userName? }]`, and last-admin refusals: `errors: [{ reason: "last_admin" }]` (§7.5).
+- Some business errors carry machine-readable reasons, e.g. invites: `errors: [{ reason: "expired" | "revoked" | "accepted" | "declined" | "gone" | "wrong_account", userName? }]`, and last-admin refusals: `errors: [{ reason: "last_admin" }]` (§7.5), and registration conflicts: `errors: [{ reason: "username_taken" | "email_taken" }]` (§7.6).
 - The frontend reads data with `unwrap(res) = res.data.data` and error text with `errMsg(e)`, which checks `errors[0].msg`, then `errors[0].message`, then `message`.
 
 ### 5.5 Constants (`src/utils/constants.js`)
@@ -382,6 +390,8 @@ erDiagram
 | `emailVerificationToken` / `emailVerificationtokenExpiry` | String / Date | sha256 hash, 1 h TTL |
 
 Methods: `comparePassword(candidate)`, `generateAccessToken()` (payload `{ _id, email, userName, tokenVersion }`, `ACCESS_TOKEN_SECRET`, `ACCESS_TOKEN_EXPIRATION`), `generateRefreshToken()` (payload `{ _id }`, `REFRESH_TOKEN_SECRET`, `REFRESH_TOKEN_EXPIRATION`), `generateForgotPasswordToken()` and `generateEmailVerificationToken()`, which return `{ token, hashedToken, tokenExpiry }`.
+
+**Username uniqueness.** The unique index `userName_1` compares case-sensitively (it has no collation). Usernames stay unique regardless of case because every write path stores them lowercase: the schema setters, registration's lowercase rule and OAuth's generator. Nothing rewrites a stored username. Rules and normalization: §7.6.
 
 ### 6.2 Project (`project.models.js`)
 
@@ -499,7 +509,8 @@ Deadlines are **whole days**. The UI sends `"YYYY-MM-DD"`, the API stores it as 
 
 | Flow | Behaviour |
 | --- | --- |
-| Register | Validates input, rejects duplicate email/username (409), creates an unverified user, emails a verification link `FRONTEND_URL/verify-email/<token>` (1 h). If the email fails, the user is deleted and the API returns 502. |
+| Register | Validates input, rejects a duplicate username or email with a field-specific 409 (`username_taken` / `email_taken`). That holds whether the pre-check finds it or a concurrent sign-up wins the unique-index race (`E11000`). Then creates an unverified user and emails a verification link `FRONTEND_URL/verify-email/<token>` (1 h). If the email fails, the user is deleted and the API returns 502. |
+| Username availability | Public `GET /auth/check-username?userName=`, used by the sign-up form as you type: available or taken, plus free suggestions for a taken name. A hint only: registration enforces uniqueness itself (§7.6). |
 | Verify email | `GET /auth/verify-email/:token` (called by the SPA page of the same path) marks the user verified. |
 | Resend verification | Public; takes `email`; always the same generic reply; at most once per 60 s per account. |
 | Login | `email` or `userName` + `password`. Errors: 400 unknown user/bad password/OAuth-only account; 403 email not verified. |
@@ -583,6 +594,92 @@ The frontend derives the caller's role from the member list (`ProjectDetail.jsx`
 
 **Limitation: the 15-second lease.** Mutual exclusion holds only if each operation finishes within its lease. The work inside the lock is three or four small queries, normally milliseconds. But if a request stalls for more than 15 s after acquiring the lease (for example a database stall), another request can take the expired lease over, and the two can overlap. That would reopen the race in principle. There is no fencing check on the final write.
 
+### 7.6 Usernames: rules, availability check and suggestions
+
+**Rules.** `src/utils/username.js`, mirrored by `frontend/src/lib/username-rules.js`; keep the two in step.
+
+- A username is stored trimmed and lowercase, and is 3 to 20 characters long (`USERNAME_MIN_LENGTH`, `USERNAME_MAX_LENGTH`).
+- Length is counted the way express-validator's `isLength` counts it: an emoji counts once, and the variation selectors U+FE0E/U+FE0F count zero.
+- There is **no character allow-list**. Registration never had one, so spaces, punctuation and non-Latin letters are accepted (§16).
+
+How each path normalizes:
+
+| Path | Behaviour |
+| --- | --- |
+| Registration (`POST /auth/register`) | The validator trims, then **rejects** uppercase (422 `"Username must be in lowercase"`); the sign-up form lowercases as you type. The schema setters trim and lowercase on write. |
+| Availability check | Trims and lowercases first, then applies the same 3–20 rule. So `" IBRAHIM "` is checked as `ibrahim`. |
+| OAuth sign-up (`uniqueUserName`) | Lowercase `[a-z0-9._-]` built from the provider handle. It can be longer than 20 characters (24-character base plus 4 random digits, or 8 hex), so the 20-character rule doesn't hold for these (§16). |
+| Login | `userName` must already be lowercase (unchanged). |
+
+**Endpoint: `GET /api/v1/auth/check-username?userName=`** (public; `checkUsernameAvailability` in `auth.controller.js`)
+
+- **Order:** `usernameCheckLimit` (rate limit), then `checkUsernameValidator()`, then `validateRequest`, then the handler.
+- **Lookup:** `User.exists({ userName })` on the normalized name, which is one lookup on the unique index.
+- **When taken:** `userNameSuggestionCandidates()` builds the candidates, one `User.distinct("userName", { userName: { $in: candidates } })` query finds which are taken, and the first `USERNAME_SUGGESTION_LIMIT` (4) free ones are returned. A free name needs no second query.
+- **Reply:** 200 with `data: { userName, available, suggestions }`, message `"Username is available"` or `"Username is already taken"`, and header `Cache-Control: no-store`. It never includes the account's id, email or verification state, and it is the same whoever holds the name.
+- **Errors:**
+  - 422 `"Validation Error"` with `errors: [{ userName: "Username is required" | "Username must be a single value" | "Username must be between 3 and 20 characters" }]`. A repeated `userName` parameter arrives as an array, hence "single value".
+  - 429 from the rate limit.
+  - 500 for anything unexpected, as elsewhere.
+
+**Suggestions.**
+
+- **Order:** `name_dev`, `name01`, `thename`, `namecodes`, then `name02` to `name30`, so at most 33 candidates.
+- **No randomness:** the same name always gives the same list.
+- **Fitting the limit:** the base is shortened by whole characters to stay within 20, and trailing spaces or `._-` are dropped before a suffix.
+- **No doubling:** an affix the name already has is skipped (no `x_dev_dev`, no `thetheo`).
+- **Always valid:** every candidate is normalized, valid, distinct and different from the requested name.
+- **Only free ones are returned:** the list is `[]` when every candidate is taken.
+- **Not a reservation:** a suggestion can be taken before the form is submitted, and registration then answers 409.
+
+**Rate limit** (`rateLimit()` in `src/middlewares/ratelimit.middleware.js`):
+
+- A fixed window of 60 checks per minute per `req.ip`, then 429 with `Retry-After`.
+- Counts live in an in-memory map that is swept every window and capped at 10,000 clients (the oldest window is dropped).
+- **Limitations:**
+  - It is per process: not shared between instances, and reset on restart.
+  - The app sets no Express `trust proxy`, so behind the Vercel rewrite and Render's proxy `req.ip` is the proxy's address, and **all clients may share one 60-per-minute budget**. Setting `trust proxy` to the real hop count would fix it, but that is a deployment decision.
+  - A 429 only disables the live hint; registration keeps working.
+
+**Registration conflicts** (`registerUser`):
+
+- **Pre-check:** the `$or` filter on `email` / `userName` is unchanged. A match now gives a 409 that names the field: `"This username is already taken. Please choose another one."` with reason `username_taken`, or `"An account with this email already exists."` with reason `email_taken`.
+- **The race:** `User.create()` is wrapped. A duplicate-key error (`code 11000`) from a concurrent sign-up becomes the same 409, with the field taken from `keyPattern`, `keyValue` or the index name in the message. An unknown index keeps the old generic 409 text. Any other error still becomes a 500.
+- **Edge case:** if the winning sign-up's verification email then fails, that account is rolled back, so the loser was told a name was taken that is free again.
+
+**Enumeration.**
+
+- The endpoint inherently reveals whether a name exists.
+- Its suggestions also imply that the skipped candidates are taken.
+- The rate limit is the only mitigation.
+- For context: registration and login already reveal whether an account exists, and `/users/search` lists verified usernames to any signed-in user.
+
+**Frontend:** `lib/username-check.js` (logic), `lib/use-username-availability.js` (hook), `components/username-field.jsx`, `pages/Register.jsx`.
+
+- **States:**
+  - `idle`;
+  - `invalid`: `too_short` is a quiet hint while typing, `too_long` or a server `rejected` is an error;
+  - `checking`;
+  - `available`;
+  - `taken`, with suggestions;
+  - `error`: `network`, `rate_limited` or `server`, with a **Try again** button. A failed check is never shown as "taken".
+- **Debounce:** 400 ms (`CHECK_DELAY_MS`). Every change immediately shows a neutral "Checking availability…", which clears any earlier result.
+- **Stale-response safety:**
+  - Each input gets a sequence number, and a check may only report while it is still the latest.
+  - The next change also aborts the request in flight through `AbortController` (axios `signal`), and the resulting cancellation errors are ignored.
+  - A value that normalizes to the same name isn't checked again.
+- **Local first:** invalid input is reported without a request.
+- **Suggestions:** clicking one fills the input, checks it immediately (no debounce) and moves focus back to the input.
+- **The input:** lowercases as you type, has `autoCapitalize="none"`, `autoCorrect="off"` and `spellCheck={false}`, and is never disabled while a check runs.
+- **Submit:**
+  - Blocked locally only while the current value is known to be taken or invalid; in every other state the server decides.
+  - A 409 `username_taken` on submit shows "Someone just took that username. Pick another one." and re-checks at once to bring up suggestions.
+- **Accessibility:**
+  - The status line is linked to the input through `aria-describedby`.
+  - `aria-invalid` is set only for taken and hard-invalid names.
+  - Results (not "checking") are announced through an `aria-live="polite"` region.
+  - Suggestions are buttons labelled `Use <name>`.
+
 ---
 
 ## 8. REST API reference
@@ -593,7 +690,8 @@ Base URL: `/api/v1`. All bodies are JSON unless noted. **Auth** = requires a val
 
 | Method | Path | Auth | Request | Returns / effects |
 | --- | --- | --- | --- | --- |
-| POST | `/register` | none | body `{ userName (lowercase, 3–20), email, password (≥6), fullName }` | 201, the user (no secrets). Sends a verification email (rolled back with 502 if it fails). 409 if the email or username exists. |
+| POST | `/register` | none | body `{ userName (lowercase, 3–20), email, password (≥6), fullName }` | 201, the user (no secrets). Sends a verification email (rolled back with 502 if it fails). 409 with `errors: [{ reason: "username_taken" }]` or `[{ reason: "email_taken" }]` when the name or email exists, including when a concurrent sign-up wins the unique-index race (§7.6). |
+| GET | `/check-username` | none (rate limited: 60/min) | query `userName` (trimmed and lowercased, then 3–20) | `{ userName, available, suggestions }`: `suggestions` is up to 4 free alternatives when taken, `[]` when free. `Cache-Control: no-store`. 422 for a malformed name, 429 when limited (§7.6). |
 | POST | `/login` | none | body `{ email \| userName, password }` | `{ user, accessToken, refreshToken }` + sets cookies. 400 / 403 (unverified). |
 | POST | `/logout` | Auth | none | Bumps `tokenVersion`, unsets `refreshToken`, disconnects sockets, clears cookies. |
 | GET | `/current-user` | Auth | none | The current user document. |
@@ -823,6 +921,7 @@ StrictMode
 - **`Layout.jsx`** loads `GET /project` once and passes `{ projects, reloadProjects }` to every page through the **`<Outlet context>`** (`useOutletContext()`). `projects` is the membership array (`[{ role, project: {...} }]`) or `null` while loading.
 - **`lib/use-tasks.js`**: `useMyTasks(projects, userId)` calls `GET /task/:projectId/users/:userId` **once per project**; `useAllTasks(projects)` calls `GET /task/:projectId` once per project. Results are tagged with `projectId` and `projectName`, flattened and sorted by `updatedAt` descending. They power Dashboard, MyTasks and Calendar.
 - Fetching pattern: `useEffect` + `useState` + `useCallback(load)`, refetch after mutations and on socket events. The board moves status optimistically and reloads to roll back on error.
+- **`lib/use-username-availability.js`**: `useUsernameAvailability(input)` returns `{ value, status, code, message, suggestions, checkNow, recheck }` for the sign-up username. It wraps `createUsernameChecker()` from `lib/username-check.js`, which does the 400 ms debounce, aborts superseded requests and ignores stale responses (§7.6). The request is `GET /auth/check-username` with an `AbortController` signal.
 
 ### 12.4 Screens and the endpoints they use
 
@@ -842,6 +941,7 @@ StrictMode
 | `AcceptInvite` | Invite details, accept/decline, wrong-account / expired / revoked states | `GET /invites/:token`, `POST /invites/:token/accept\|decline` |
 | `Account` | Change password (signs you out) | `POST /auth/change-password` |
 | Auth pages | Login / register / forgot / reset / verify / resend | the `/auth/*` endpoints |
+| `Register` + `UsernameField` | The username field checks availability as you type: "Checking availability…", available (success colour), or taken (error) with clickable suggestions. Local validation and network errors have their own states. Submit is blocked only while the name is known to be taken or invalid; a 409 `username_taken` on submit says so and re-checks (§7.6). | `GET /auth/check-username`, `POST /auth/register` |
 
 ### 12.5 UI kit and design system
 
@@ -921,6 +1021,8 @@ npm run lint --prefix frontend
 - Validation chains are factory functions in `validators/index.js` (`createTaskValidator()` etc.), followed by `validateRequest`.
 - Project-scoped routes always nest under `/:projectId` so `roleProjectPermission` can authorise; child resources (task → subtask) are also checked to belong to the project.
 - **Any code path that deletes a `ProjectMember` or changes its role must run inside `withMemberLock(projectId, ...)` and call `assertNotLastAdmin` before the write** (see `deleteProjectMember` and `updateProjectMemberRoles`). Paths that only add memberships, like invite acceptance, don't need it.
+- Username rules come only from `src/utils/username.js` (constants, `normalizeUserName`, `isValidUserName`). `frontend/src/lib/username-rules.js` mirrors them, so change both together. A unique-index race on insert (`E11000`) is answered with the same 409 as the pre-check, never a 500.
+- Public endpoints that need throttling reuse `rateLimit()` from `src/middlewares/ratelimit.middleware.js` (in-memory, per process; see §7.6 for its proxy caveat).
 - Side effects run **after** the DB write: socket emits are synchronous, emails go through `sendInBackground(label, fn)` so a slow mail provider never fails the request. "Don't notify yourself" checks compare the actor with the recipient.
 - IDs are converted with `new mongoose.Types.ObjectId(id)`; aggregations are used for joined reads (`getProjects`, `getTaskById`); otherwise `populate` with explicit field lists. Fields safe to expose for other users: `userName fullName avatar` (emails are never exposed in search).
 - Naming quirks to preserve or fix deliberately: `forgotPasswordtokenExpiry` / `emailVerificationtokenExpiry` (lowercase `t`), the `attachements` local variable, mixed `*.controller.js` / `*.controllers.js` and `project.route.js` vs `*.routes.js` filenames, singular mounts `/task` and `/project` vs plural `/notes`, `/users`, `/invites`.
@@ -932,6 +1034,7 @@ npm run lint --prefix frontend
 - User feedback through `toast()`; inline `<Alert tone="danger">` for form errors; `Skeleton` while loading; `EmptyState` for empty lists.
 - URL state for overlays: `?task=<id>` / `?task=new`, `?new=1`.
 - Display helpers in `lib/format.js` (`displayName`, `dueInfo`, `daysUntilDue`, `dueDateValue`, `relativeTime`, `taskHref`, `assigneeOf`). Always use these for dates and names.
+- Timing-sensitive request logic (debounce, abort, stale responses) lives in framework-free modules with explicit `.js` imports, such as `lib/username-check.js`, with a thin React hook on top. That way it can be unit-tested with Node's `node:test` and fake timers, without a DOM.
 - Copy is sentence case.
 
 ---
@@ -958,7 +1061,7 @@ Each item below was checked against the code. They are the obvious candidates fo
    - no "leave project" endpoint for non-admins;
    - no ownership transfer flow, beyond promoting someone and then stepping down.
 10. `ProjectMember` has no unique `{ project, user }` index (duplicates are possible in theory; accept uses an upsert). If one user had two admin memberships in a project, the last-admin check would not count the duplicate as "another admin", which errs on the safe side.
-11. No rate limiting (login, register, forgot password, user search) and no security headers (e.g. helmet). The only throttle is the 60 s cooldown on verification resends.
+11. Rate limiting exists only on `GET /auth/check-username`, through the in-memory `rateLimit()` (§7.6). It is per process, and keyed by `req.ip` without `trust proxy`, so behind the proxies it may be one shared budget. Login, register, forgot password and user search are still unlimited, and there are no security headers (e.g. helmet). The only other throttle is the 60 s cooldown on verification resends.
 12. `verifyJWT` doesn't exclude `forgotPasswordToken`, `forgotPasswordtokenExpiry` or `tokenVersion`, so `/auth/current-user` returns them (a hash, not the raw token, but still unnecessary).
 13. One refresh token per user, stored as plain text: signing in on a second device breaks the first device's next refresh, and there is no session list or per-device logout.
 
@@ -989,6 +1092,12 @@ Each item below was checked against the code. They are the obvious candidates fo
 27. No automated tests (only one-off verification runs outside the repo, see §18), no CI, no TypeScript, no OpenAPI/Swagger docs. `frontend/README.md` is the stock Vite template. `PRD.md` is outdated and gitignored.
 28. An unused env var (`BASE_PASWWORD_RESET_LINK`) and unused design tokens (`status-review`, `status-blocked`, `priority-*`).
 
+**Usernames and test wiring** (found 2026-11-14)
+
+29. Usernames have **no character allow-list**: spaces, punctuation, emoji and any non-uppercase character pass registration. The availability check deliberately mirrors this (§7.6). An allow-list such as `^[a-z0-9._-]+$` (the OAuth generator's set) would have to be added to both rule files and the registration validator together.
+30. OAuth-generated usernames can be longer than registration's 20-character maximum (24-character base plus 4 digits or 8 hex characters), so the length rule isn't universal. The availability check would call such a name invalid.
+31. `connectDB()` ignores the database named in the connection string and always uses `projectmanagementDB`. Pointing `MONGO_URI` at `TESTING_DATABASE_URL` would therefore use `projectmanagementDB` on the testing cluster, not the `projectmanagement` database the URL names (§18.2).
+
 ---
 
 ## 17. Extension points: how to add a feature
@@ -1018,7 +1127,8 @@ Ideas that need new dependencies (marked "new dependency") or new tools must be 
 | `/me/tasks` aggregate endpoint | New route under `/api/v1/users/me/tasks` (or `/task/me`) joining `ProjectMember` → `Task`; replace the fan-out in `lib/use-tasks.js` |
 | Profile / avatar | `PATCH /auth/me` + `upload.single("avatar")` (reuse `multer.middleware.js`), extend the Account page |
 | Invite by email for non-users | Allow `ProjectInvite.invitedUser` to be null with an `email` field; on register/verify, convert matching invites |
-| Rate limiting / hardening | Add `express-rate-limit` + `helmet` (new dependencies) in `app.js`; exclude extra fields in `verifyJWT` |
+| Rate limiting / hardening | Reuse `rateLimit()` from `src/middlewares/ratelimit.middleware.js` on login, register and forgot-password. Set Express `trust proxy` to the real hop count so `req.ip` is the client. A store shared between instances (e.g. Redis) and `helmet` would be new dependencies. Exclude extra fields in `verifyJWT` |
+| Username character rules | Add an allow-list to `src/utils/username.js` / `frontend/src/lib/username-rules.js` and a `.matches()` to both username validator chains in `validators/index.js` (§16 item 29) |
 | Permanent test suite | HTTP tests against the exported `app` (it is separate from `index.js`, which listens), run against the **remote testing database** from `.env.local`, never a local or in-memory MongoDB (§18.2). Node 22's built-in `node:test` and `fetch` need no new packages; Supertest or a framework would be new dependencies |
 
 ---
@@ -1043,8 +1153,52 @@ Ideas that need new dependencies (marked "new dependency") or new tools must be 
   - `connectDB()` connects with `MONGO_URI` and always forces the database name `projectmanagementDB`, whatever the URI says.
   - So a test runner must set `MONGO_URI` from `TESTING_DATABASE_URL` itself and run from a directory where no `.env` gets loaded. Otherwise the production URI and the real mail credentials come with it, and background notification emails would actually be sent.
   - Before writing anything, it should check that the URI in use is the testing one. If it goes through `connectDB()`, its records land in the `projectmanagementDB` database on the testing server, next to any existing testing data.
+- **State of the testing cluster** (read-only inspection on 2026-11-14: names, counts and index metadata only):
+  - The database the URL names, `projectmanagement`, holds a single empty collection, also called `projectmanagement`. It has **no `users` collection and none of the app's indexes**.
+  - The same cluster's `projectmanagementDB` holds app data: users with the unique `userName`/`email` indexes, projects, tasks, memberships, and a `projectmemberlocks` collection that only the new last-admin code creates. It looks like what the app actually uses, so **it must never be used for tests**.
+- **Owner decision (2026-11-14):** don't create, modify, drop or delete any collection, index or document in either database. Tests that need a `users` collection with the real unique indexes are therefore **not run** until the owner decides otherwise.
+- **Sandbox DNS note:** inside the Claude Code sandbox, Node's DNS resolver points at `127.0.0.1`, which refuses the SRV lookup that `mongodb+srv://` needs (`querySrv ECONNREFUSED`). Calling `dns.setServers()` in the test process with the OS resolver's address (the one `nslookup` uses) worked; nothing on the machine was changed.
 
 ### 18.3 Verification log
+
+Newest first.
+
+#### 2026-11-14: username availability (commits `f16a22b` to `e5651ff`)
+
+**Which code was tested.**
+- Every file of the feature is byte-for-byte what the tests ran against: each was last modified before the final run and is unchanged in `e5651ff`.
+- The UI tests also loaded `auth-shell.jsx`, for `Field` and `TextInput`. The owner's hero edit to that file (committed as `d25698d`) was saved around the time of the final run, so that exact version may not have been tested. It only changes the hero panel's markup.
+
+- **No database was used.**
+  - Following the owner's decision (§18.2), nothing was created, changed or deleted in either database.
+  - The tests never opened a database connection: no URI was set, Mongoose `bufferCommands` was off so any stray query would fail at once, and `readyState` stayed `0`.
+  - The model calls the handlers make (`User.exists`, `User.distinct`, and `User.findOne` / `User.create` for registration) were replaced by in-memory stubs.
+  - The only contact with the testing cluster was the read-only inspection in §18.2, before the decision.
+- **How it ran.**
+  - Three temporary `node:test` files in the Claude session's scratchpad, using only Node 22 built-ins and the project's existing dependencies: express-validator, React, and the frontend's own Vite for server-side rendering. Nothing was installed.
+  - They ran from a directory without `.env`, with no mail transport configured.
+  - The HTTP tests used the real Express app on `127.0.0.1`.
+- **Result: 46 of 46 tests passed.**
+
+| Area | Checked | Result |
+| --- | --- | --- |
+| Validation and normalization (4 tests) | `normalizeUserName`; `isValidUserName`; on a 25-input corpus (padding, uppercase, 20/21 characters, emoji, variation selectors, combining marks, `İ`) registration's validator, the check endpoint's validator, the backend rules and the frontend rules accept and reject exactly the same inputs, with the same length; the shared constants match | pass |
+| Suggestion generation (4) | for `ibrahim`: first four `ibrahim_dev`, `ibrahim01`, `theibrahim`, `ibrahimcodes`, 33 in all, deterministic, no random strings; a 20-character base is shortened to fit; no doubled affixes or separators; unusual valid names give valid, well-formed candidates | pass |
+| API, data layer stubbed (6) | 7 malformed inputs give 422 in the project's validation format with no lookup; 3 and 20 characters accepted; the "available" reply's exact envelope, normalized name, one exact lookup, no suggestion query and `Cache-Control: no-store`; "taken" (asked in uppercase) returns only free suggestions, 4 of them, from one `$in` query over all candidates, with no account data in the reply; all candidates taken gives `[]`; a data-layer failure gives a plain 500 without internals | pass |
+| Registration error mapping, stubbed (8) | E11000 on `userName` gives 409 `username_taken`, on `email` gives `email_taken`; without `keyPattern` the field comes from the index name; an unknown index gives the generic 409; other `create()` errors are still 500; pre-check matches give the matching reason without calling `create()`; an uppercase username from an API client is still 422 | pass |
+| Rate limiting (2) | unit test with a fake clock: per-client fixed window, 429 and `Retry-After`, reset after the window, oldest client dropped at the cap; endpoint: 60 requests in a minute pass, the 61st gets 429 in the standard error envelope with `Retry-After`, and other auth routes are unaffected | pass |
+| Frontend checker (15) | debounce (one request 400 ms after the last keystroke); an immediate neutral "checking" on every change; normalization and no repeat check for the same name; **the stale-response race** (request A answers after B and is ignored; A was aborted when the input changed); late failures ignored; an answer arriving during the next debounce ignored; clearing drops pending results; invalid input never sent; a network failure is an error state, not "taken"; 429 / 5xx / 422 each mapped; cancellation errors never surface; retry; a picked suggestion is checked at once without a duplicate request; dispose and StrictMode remount; suggestions from the API are cleaned | pass |
+| UI states (7) | the real `UsernameField`, server-rendered in idle, checking, available, taken with and without suggestions, too short / too long, and network error: messages, icons, colour tokens, `aria-invalid` only for taken and hard errors, suggestion buttons, live-region text, Try again, mobile input attributes, and every `aria-describedby` id exists | pass, after fixing a bug these tests found: a dangling `aria-describedby` id in the taken and too-long states |
+
+- **NOT EXECUTED (they need a database):**
+  - availability against real data, and whether suggestions are free in a real database;
+  - the case-insensitive duplicate against the actual unique index;
+  - the real concurrent duplicate-registration race, with `E11000` coming from MongoDB;
+  - confirming index use with `explain()`.
+  The duplicate-key handling was reviewed statically, and its mapping was tested with stubs only.
+- **Also not covered:** a real browser (typing, focus, screen readers), mobile keyboards, and production behaviour of `req.ip` behind the proxies.
+- **Also run:** ESLint on every changed frontend file (no problems); `npm run build --prefix frontend` (succeeds, with the existing 500 kB chunk warning); `node --check` on the changed backend files.
+- **The test files were deleted after the run.** There is no permanent suite: these results are recorded here, but re-checking needs a new run under §18.2.
 
 #### 2026-11-14: last-admin protection (commit `896d52c`)
 
