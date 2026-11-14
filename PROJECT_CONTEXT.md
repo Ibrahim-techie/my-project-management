@@ -2,14 +2,14 @@
 
 > **Purpose of this document:** a complete, self-contained description of the existing CAMP codebase (architecture, data model, every API endpoint, real-time events, emails, frontend structure, conventions and known gaps) so an AI assistant or a new developer can understand the system and propose new features or improvements that fit it.
 >
-> - **Last updated:** 2026-11-14, against commit `78b1c47` on `main` **plus uncommitted working-tree changes** (last-admin protection: `src/controllers/project.controllers.js` modified, `src/models/projectmemberlock.models.js` new). Once those are committed, replace this line with the new commit hash.
+> - **Last updated:** 2026-11-14. **Code baseline:** commit `896d52c` on `main` (`fix(projects): prevent removal or demotion of last admin`), the latest commit that changes code under `src/` or `frontend/`.
 > - Source of truth: everything here was read from the code. The repo also has an older `PRD.md` (gitignored) whose route names are **outdated** (`/projects`, `/tasks`, `/t/:taskId`). Use the routes in this document.
 > - Language: JavaScript (ES modules) end to end. No TypeScript.
-> - **Living document:** update the relevant section (not a new appendix) after every meaningful change: features or modules, endpoints or responses, models, indexes or relationships, auth, authorization or security, architecture decisions, env vars or deployment, important fixes and known limitations, and testing. Remove obsolete statements, verify against the code and the git diff, and bump the date and commit above. This file itself is gitignored, so git doesn't version it.
+> - **Living document:** update the relevant section (not a new appendix) after every meaningful change: features or modules, endpoints or responses, models, indexes or relationships, auth, authorization or security, architecture decisions, env vars or deployment, important fixes and known limitations, and testing. Remove obsolete statements, verify against the code and the git diff, and bump the date and commit above. Only reference commits that already exist: name the commit that contains the documented code, never a hash that hasn't been created yet. This file is tracked in git.
 >
 > **Document history**
 > - 2026-11-14: first full snapshot, from `78b1c47`.
-> - 2026-11-14: last-admin protection and the per-project member lock (§6.8, §7.5, §8.2); testing rules and verification log (new §18); the `.env.local` testing config (§13).
+> - 2026-11-14: last-admin protection and the per-project member lock, as committed in `896d52c` (§6.8, §7.5, §8.2); testing rules and verification log (new §18); the `.env.local` testing config (§13). The temporary test runner was deleted after verification.
 
 ---
 
@@ -110,7 +110,7 @@ Monorepo-style: the Express API lives at the root, the React app in `frontend/`.
 ├── package.json                    # API deps + scripts: dev (nodemon), start, mail:test
 ├── README.md                       # product + setup docs (accurate)
 ├── PRD.md                          # old product spec, gitignored, OUTDATED routes
-├── PROJECT_CONTEXT.md              # this document (gitignored)
+├── PROJECT_CONTEXT.md              # this document (tracked in git)
 ├── .env                            # API config (gitignored); production MONGO_URI lives here
 ├── .env.local                      # testing config (gitignored): TESTING_DATABASE_URL; not read by app code (§13, §18)
 ├── public/
@@ -953,7 +953,7 @@ Each item below was checked against the code. They are the obvious candidates fo
 
 **Missing safeguards**
 
-9. Last-admin protection **is implemented** (2026-11-14, §7.5). What remains:
+9. Last-admin protection **is implemented** (2026-11-14, commit `896d52c`, §7.5). What remains:
    - its known limitation: the member lock's 15 s lease, after which a stalled request can overlap with the next one;
    - no "leave project" endpoint for non-admins;
    - no ownership transfer flow, beyond promoting someone and then stepping down.
@@ -1046,7 +1046,9 @@ Ideas that need new dependencies (marked "new dependency") or new tools must be 
 
 ### 18.3 Verification log
 
-#### 2026-11-14: last-admin protection (uncommitted, on top of `78b1c47`)
+#### 2026-11-14: last-admin protection (commit `896d52c`)
+
+The run tested exactly the code committed in `896d52c`: both source files were last modified before the run and are unchanged since.
 
 - **How it ran.** A one-off integration script drove the real Express app (`src/app.js`) over HTTP on a local random port.
   - **Database:** a **throwaway in-memory MongoDB** (7.0.24, started by `mongodb-memory-server`), using database `camp-test`. `mongodb-memory-server` was installed temporarily in the Claude session's scratchpad, outside the repository.
@@ -1074,7 +1076,7 @@ Ideas that need new dependencies (marked "new dependency") or new tools must be 
   - `mongodb-memory-server` and its downloaded `mongod` binary were deleted, no MongoDB process remained, and MongoDB Compass was left alone.
   - All backend source files passed `node --check`, and the app's module graph loaded (8 models, no DB connection).
   - `npm run build --prefix frontend` succeeded; its existing warning about a chunk over 500 kB predates this change.
-- **Where the runner is now.** A single temporary file (`run.mjs`) in the session scratchpad, which can be cleared at any time. It isn't in the repository, can't run as-is because its MongoDB dependency was removed, and must not be counted as regression coverage.
+- **The runner no longer exists.** It was a single temporary file (`run.mjs`) in the Claude session's scratchpad, never part of the repository, and it was deleted along with its directory on 2026-11-14 after verification. This run gives **no** ongoing regression coverage: the scenarios above are recorded here, but re-checking them needs a new test run (§18.2).
 - **Not covered:**
   - the frontend: no UI test was run, and the frontend wasn't changed;
   - a replica set / Atlas: the lock uses no transactions, so the topology shouldn't matter, but this wasn't run;
